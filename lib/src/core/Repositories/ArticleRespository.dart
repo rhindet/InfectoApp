@@ -1,0 +1,57 @@
+// repositories/article_repository.dart
+import '../service/ArticleService.dart';
+import '../models/ArticleModel.dart';
+import '../models/Nivel0Model.dart';
+import '../models/Nivel1Model.dart';
+import '../models/Nivel2Model.dart';
+
+class ArticleRepository {
+  final ArticleService service;
+  ArticleRepository(this.service);
+
+  Future<ArticleModel> getById(String id) async {
+    final json = await service.fetchArticle(id);
+    return ArticleModel.fromJson(json);
+    // si tu API envuelve la data (p.ej. {"data": {...}}):
+    // return ArticleModel.fromJson(json['data']);
+  }
+
+  Future<List<ArticleModel>> getAllArticles() async {
+    final list = await service.fetchArticles(); // List<dynamic>
+    return list
+        .map((e) => ArticleModel.fromJson(e as Map<String, dynamic>))
+        .toList();
+    // si tu API regresa {"data":[...]}:
+    // final list = (json['data'] as List).map(...).toList();
+  }
+
+
+  Future<List<Nivel0Model>> getAllNivel0() async {
+    final list = await service.fetchAllNivel0(); // List<dynamic>
+    return list
+        .map((e) => Nivel0Model.fromJson(e as Map<String, dynamic>))
+        .toList();
+    // si tu API regresa {"data":[...]}:
+    // final list = (json['data'] as List).map(...).toList();
+  }
+
+  Future<List<Nivel1Model>> getAllNivel1() async {
+    final list = await service.fetchAllNivel1(); // List<dynamic>
+    return list
+        .map((e) => Nivel1Model.fromJson(e as Map<String, dynamic>))
+        .toList();
+    // si tu API regresa {"data":[...]}:
+    // final list = (json['data'] as List).map(...).toList();
+  }
+  Future<List<Nivel2Model>> getAllNivel2() async {
+    final list = await service.fetchAllNivel2(); // List<dynamic>
+    return list
+        .map((e) => Nivel2Model.fromJson(e as Map<String, dynamic>))
+        .toList();
+    // si tu API regresa {"data":[...]}:
+    // final list = (json['data'] as List).map(...).toList();
+  }
+
+
+
+}

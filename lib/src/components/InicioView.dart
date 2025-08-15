@@ -1,5 +1,7 @@
 
 import 'package:flutter/material.dart';
+import 'CardBase.dart';
+
 
 class InicioView extends StatefulWidget{
   const InicioView({super.key});
@@ -14,9 +16,11 @@ class _InicioViewState extends State<InicioView>{
   @override
   Widget build(BuildContext context){
     return Container(
-      //color: Colors.red,
+      //color: Colors.green,
       padding: EdgeInsets.symmetric(vertical: 20,horizontal: 20),
       child: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start ,
         children: [
 
             Container(
@@ -25,18 +29,23 @@ class _InicioViewState extends State<InicioView>{
                 child:Text(
                   "Articulos Populares",
                   style: TextStyle(
-
                       fontSize: 20,
                       fontWeight: FontWeight.bold
                   ),
                 )
             ),
+            SizedBox(height: 20),
             Expanded(
-            child: Container(
-             // color: Colors.brown,
+              child: Container(
+              width: double.infinity,
+              child: Column(
+                children: [
+                  CardBase(),
+                ],
+              )
 
-            ),
-          )
+            ),)
+
 
 
            ]

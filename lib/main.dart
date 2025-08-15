@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:infecto_migrado/src/components/CounterCubit.dart';
 import 'package:infecto_migrado/src/components/BottomTabNavegator.dart';
+import 'package:infecto_migrado/src/components/ChangePageBloc.dart';
+
 void main() {
   runApp(const MyApp());
 }
@@ -15,11 +17,21 @@ class MyApp extends StatelessWidget {
       title: 'Infecto App',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        splashFactory: NoSplash.splashFactory, // esto desactiva animación tipo ripple (Animacion al dar click en elemento de TabBar)
+        splashColor: Colors.transparent,  // esto desactiva animación tipo ripple
+        highlightColor: Colors.transparent, //esto desactiva animación tipo ripple
         useMaterial3: true,
       ),
-      home: BlocProvider(
-        create: (_) => CounterCubit(),
-        child: const MyHomePage(),
+      home: MultiBlocProvider(
+        providers: [
+          BlocProvider<CounterCubit>(
+            create: (_) => CounterCubit(),
+          ),
+          BlocProvider<ChangePageBloc>(
+            create: (_) => ChangePageBloc(),
+          ),
+        ],
+        child:  MyHomePage(),
       ),
     );
   }
@@ -38,6 +50,7 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor:Colors.white ,
         title: Row(
           spacing: 40,
             mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -70,103 +83,157 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  void showSideModal(BuildContext context) {
+  void showSideModal(BuildContext outerContext) {
     showGeneralDialog(
-      context: context,
+      context: outerContext,
       barrierDismissible: true,
       barrierLabel: 'Cerrar',
       transitionDuration: const Duration(milliseconds: 300),
       pageBuilder: (context, animation, secondaryAnimation) {
-        return Container(
-          child: Align(
-            alignment:Alignment.centerLeft,
-            child: FractionallySizedBox(
-              widthFactor: 0.5, // Ocupa la mitad de la pantalla
-              child: Material(
-                color: Color(0xFF084C8A),
-                elevation: 10,
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(16),
-                  bottomLeft: Radius.circular(16),
-                ),
-                child: Column(
-                  children: [
-                    AppBar(
-                      backgroundColor:Color(0xFF084C8A),
-                      title: Container(
-                        child: Image.asset("assets/infecto_logo_blanco.png"),
+        return Builder(
+          builder: (innerContext) {
+            return Align(
+              alignment: Alignment.centerLeft,
+              child: FractionallySizedBox(
+                widthFactor: 0.5,
+                child: Material(
+                  color: const Color(0xFF084C8A),
+                  elevation: 10,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(16),
+                    bottomLeft: Radius.circular(16),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      AppBar(
+                        backgroundColor: const Color(0xFF084C8A),
+                        title: Image.asset("assets/infecto_logo_blanco.png"),
+                        automaticallyImplyLeading: false,
                       ),
-                      automaticallyImplyLeading: false,
-                    ),
-                    const Expanded(
-                      child: Center(
-                          child: Column(
-                            children: [
-                              TextButton(
-                                  child: Text(
-                                      "Contacto",
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold
+                      Expanded(
+                          child: Padding(
+                              padding: EdgeInsets.symmetric(vertical: 40,horizontal: 10),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start ,
+                              children: [
+                                Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 10),
+                                  child: TextButton(
+                                    onPressed: () {
+                                      Navigator.of(innerContext).pop();
+                                      outerContext.read<ChangePageBloc>().add(CambiarPagina(4)); // ir a Contacto
+                                    },
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,  // evita que el botón se expanda
+                                      children: const [
+                                        Icon(Icons.phone_android, color: Colors.white),
+                                        SizedBox(width: 8), // espacio entre icono y texto
+                                        Text(
+                                          "Contacto",
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
-                                  onPressed: null
-                              ),
-                              TextButton(
-                                  child: Text(
-                                    "Como Llegar",
-                                    style: TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold
-                                    ),
-                                  ),
-                                  onPressed: null
-                              ),
-                              TextButton(
-                                  child: Text(
-                                    textAlign: TextAlign.center,
-                                    "Terminos y\nCondiciones",
-                                    style: TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold
-                                    ),
-                                  ),
-                                  onPressed: null
-                              ),
-                              TextButton(
-                                  child: Text(
-                                    "Acerca de",
-                                    style: TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold
-                                    ),
-                                  ),
-                                  onPressed: null
-                              )
-
-                            ],
+                                ),
+                                Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 10),
+                                        child:TextButton(
+                                          onPressed: () {
+                                            Navigator.of(innerContext).pop();
+                                            outerContext.read<ChangePageBloc>().add(CambiarPagina(5)); // ir a Contacto
+                                          },
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min, // evita que el botón se expanda
+                                            children: const [
+                                              Icon(Icons.map, color: Colors.white),
+                                              SizedBox(width: 8), // espacio entre icono y texto
+                                              Text(
+                                                "Como llegar?",
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                ),
+                                Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 10),
+                                        child:TextButton(
+                                          onPressed: () {
+                                            Navigator.of(innerContext).pop();
+                                            outerContext.read<ChangePageBloc>().add(CambiarPagina(6)); // ir a Contacto
+                                          },
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min, // evita que el botón se expanda
+                                            children: const [
+                                              Icon(Icons.edit_note, color: Colors.white,size: 25,),
+                                              SizedBox(width: 8), // espacio entre icono y texto
+                                              Text(
+                                                "Terminos & \n Condiciones",
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                ),
+                                Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 10),
+                                        child:TextButton(
+                                          onPressed: () {
+                                            Navigator.of(innerContext).pop();
+                                            outerContext.read<ChangePageBloc>().add(CambiarPagina(7)); // Acerca de
+                                          },
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min, // evita que el botón se expanda
+                                            children: const [
+                                              Icon(Icons.info_outline, color: Colors.white),
+                                              SizedBox(width: 8), // espacio entre icono y texto
+                                              Text(
+                                                "Acerca de",
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ) ),
+                              ],
+                            ),
                           )
+
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ),
+            );
+          },
         );
       },
       transitionBuilder: (context, animation, secondaryAnimation, child) {
-        final curvedValue = Curves.easeInOut.transform(animation.value);
         return SlideTransition(
           position: Tween<Offset>(
-            begin: const Offset(-1, 0), // Empieza fuera de la derecha
+            begin: const Offset(-1, 0),
             end: Offset.zero,
-          ).animate(CurvedAnimation(parent: animation, curve: Curves.easeInOut)),
+          ).animate(CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeInOut,
+          )),
           child: child,
         );
       },
     );
   }
-
 
 }
