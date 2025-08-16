@@ -2,7 +2,7 @@ import 'package:dio/dio.dart';
 
 Dio createDio() {
   final dio = Dio(BaseOptions(
-    baseUrl: 'http://192.168.213.103:3000', // cambia por tu URL
+    baseUrl: 'http://192.168.0.6:3000', // cambia por tu URL
     connectTimeout: const Duration(seconds: 10),
     receiveTimeout: const Duration(seconds: 15),
     headers: {'Accept': 'application/json', 'Content-Type': 'application/json'},
@@ -19,6 +19,14 @@ class ArticleService {
   ArticleService(this._dio);
 
   Future<Map<String, dynamic>> fetchArticle(String id) async {
+    try {
+      final res = await _dio.get('/articles/$id'); // <- ruta típica REST
+      return res.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      throw Exception('Error al obtener artículo: ${e.message}');
+    }
+  }
+  Future<Map<String, dynamic>> fetchArticlesById(String id) async {
     try {
       final res = await _dio.get('/articles/$id'); // <- ruta típica REST
       return res.data as Map<String, dynamic>;
@@ -44,7 +52,7 @@ class ArticleService {
       throw Exception('Error al listar nivel0: ${e.message}');
     }
   }
-  Future<List<dynamic>> fetchAllNivel1() async {
+  Future<List<dynamic>> fetchAllNivel1(String id) async {
     try {
       final res = await _dio.get('/nivel1'); // devuelve una lista
       return res.data as List<dynamic>;
@@ -56,6 +64,40 @@ class ArticleService {
   Future<List<dynamic>> fetchAllNivel2() async {
     try {
       final res = await _dio.get('/nivel2'); // devuelve una lista
+      return res.data as List<dynamic>;
+    } on DioException catch (e) {
+      throw Exception('Error al listar nivel2: ${e.message}');
+    }
+  }
+
+  Future<List<dynamic>> fetchAllNivelFiltered2(String id) async {
+    try {
+      final res = await _dio.get('/nivel2/$id'); // devuelve una lista
+      return res.data as List<dynamic>;
+    } on DioException catch (e) {
+      throw Exception('Error al listar nivel2: ${e.message}');
+    }
+  }
+  Future<List<dynamic>> fetchAllNivel3() async {
+    try {
+      final res = await _dio.get('/nivel3'); // devuelve una lista
+      return res.data as List<dynamic>;
+    } on DioException catch (e) {
+      throw Exception('Error al listar nivel13 ${e.message}');
+    }
+  }
+  Future<List<dynamic>> fetchAllNivel4() async {
+    try {
+      final res = await _dio.get('/nivel4'); // devuelve una lista
+      return res.data as List<dynamic>;
+    } on DioException catch (e) {
+      throw Exception('Error al listar nivel14 ${e.message}');
+    }
+  }
+
+  Future<List<dynamic>> fetchAllNivelesScraping(String id,int level) async {
+    try {
+      final res = await _dio.get('/nivelesScraping/$id/$level');
       return res.data as List<dynamic>;
     } on DioException catch (e) {
       throw Exception('Error al listar nivel1: ${e.message}');
