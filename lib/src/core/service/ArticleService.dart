@@ -20,7 +20,7 @@ class ArticleService {
 
   Future<Map<String, dynamic>> fetchArticle(String id) async {
     try {
-      final res = await _dio.get('/articles/$id'); // <- ruta típica REST
+      final res = await _dio.get('/articles/article/$id'); // <- ruta típica REST
       return res.data as Map<String, dynamic>;
     } on DioException catch (e) {
       throw Exception('Error al obtener artículo: ${e.message}');
@@ -34,6 +34,17 @@ class ArticleService {
       throw Exception('Error al obtener artículo: ${e.message}');
     }
   }
+
+  Future<List<dynamic>> fetchAllArticlesById(String id) async {
+    try {
+
+      final res = await _dio.get('/articles/$id'); // <- ruta típica REST
+      return res.data as List<dynamic>;
+    } on DioException catch (e) {
+      throw Exception('Error al listar artículos: ${e.message}');
+    }
+  }
+
 
   Future<List<dynamic>> fetchArticles() async {
     try {

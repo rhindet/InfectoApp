@@ -18,9 +18,38 @@ class ArticleRepository {
     // return ArticleModel.fromJson(json['data']);
   }
 
+  Future<ArticleModel> fetchArticle(String id) async {
+    final json = await service.fetchArticle(id);
+    return ArticleModel.fromJson(json);
+    // si tu API envuelve la data (p.ej. {"data": {...}}):
+    // return ArticleModel.fromJson(json['data']);
+  }
+
+
+
+
+  Future<List<ArticleModel>> fetchAllArticlesById(String id) async {
+    final list = await service.fetchAllArticlesById(id); // List<dynamic>
+    return list
+        .map((e) => ArticleModel.fromJson(e as Map<String, dynamic>))
+        .toList();
+    // si tu API regresa {"data":[...]}:
+    // final list = (json['data'] as List).map(...).toList();
+  }
+
 
   Future<List<ArticleModel>> getAllArticles() async {
     final list = await service.fetchArticles(); // List<dynamic>
+    return list
+        .map((e) => ArticleModel.fromJson(e as Map<String, dynamic>))
+        .toList();
+    // si tu API regresa {"data":[...]}:
+    // final list = (json['data'] as List).map(...).toList();
+  }
+
+  Future<List<ArticleModel>> getAllArticlesById(String id) async {
+    print("llamo");
+    final list = await service.fetchAllArticlesById(id); // List<dynamic>
     return list
         .map((e) => ArticleModel.fromJson(e as Map<String, dynamic>))
         .toList();

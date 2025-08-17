@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-
+import 'package:flutter_html/flutter_html.dart';
 import '../core/Repositories/AppDeps.dart';
 import '../core/models/Nivel0Model.dart';
 import '../core/models/Nivel1Model.dart';
@@ -8,9 +8,13 @@ import '../core/models/Nivel2Model.dart';
 import '../core/models/Nivel3Model.dart';
 import '../core/models/Nivel4Model.dart';
 import '../core/models/ArticleModel.dart';
+import 'package:flutter_html/flutter_html.dart';
+import 'package:flutter_html_table/flutter_html_table.dart'; // <-- extensión de tablas
+import 'package:html/dom.dart' as dom; // opcional si lo usas en otros lados
 
 /// --------- Estado de navegación (0..5 niveles) ----------
 class GuiaState {
+  final bool isArticleMode;
   final int level;        // 0..5  (5 = detalle de artículo)
   final String? key0;     final String? title0;
   final String? key1;     final String? title1;
@@ -21,6 +25,8 @@ class GuiaState {
   final String? articleId;
   final String? articleTitle;
 
+  final bool showArticleDetail;
+
   const GuiaState({
     this.level = 0,
     this.key0, this.title0,
@@ -29,7 +35,32 @@ class GuiaState {
     this.key3, this.title3,
     this.articleId,
     this.articleTitle,
+    this.showArticleDetail = false,
+    this.isArticleMode = false,   // 👈 default
+
   });
+
+  GuiaState copyWith({
+    int? level,
+    String? key0, String? title0,
+    String? key1, String? title1,
+    String? key2, String? title2,
+    String? key3, String? title3,
+    String? articleId,
+    String? articleTitle,
+    bool? showArticleDetail,
+    bool? isArticleMode,
+  }) => GuiaState(
+    level: level ?? this.level,
+    key0: key0 ?? this.key0, title0: title0 ?? this.title0,
+    key1: key1 ?? this.key1, title1: title1 ?? this.title1,
+    key2: key2 ?? this.key2, title2: title2 ?? this.title2,
+    key3: key3 ?? this.key3, title3: title3 ?? this.title3,
+    articleId: articleId ?? this.articleId,
+    articleTitle: articleTitle ?? this.articleTitle,
+    showArticleDetail: showArticleDetail ?? this.showArticleDetail,
+    isArticleMode: isArticleMode ?? this.isArticleMode,
+  );
 
   GuiaState toLevel0() => const GuiaState(level: 0);
 
@@ -86,7 +117,32 @@ class GuiaState {
     articleId: articleId,
     articleTitle: articleTitle,
   );
-}
+
+  GuiaState showArticle({required String articleId, required String articleTitle}) =>
+      GuiaState(
+        level: level, // mantenemos el nivel actual
+        key0: key0, title0: title0,
+        key1: key1, title1: title1,
+        key2: key2, title2: title2,
+        key3: key3, title3: title3,
+        articleId: articleId,
+        articleTitle: articleTitle,
+        showArticleDetail: true,
+      );
+
+  GuiaState hideArticle() =>
+      GuiaState(
+        level: level,
+        key0: key0, title0: title0,
+        key1: key1, title1: title1,
+        key2: key2, title2: title2,
+        key3: key3, title3: title3,
+        articleId: null,
+        articleTitle: null,
+        showArticleDetail: false,
+      );
+} // fin GuiaSTATE
+
 
 /// Cubit para manejar navegación
 class GuiaSectionCubit extends Cubit<GuiaState> {
@@ -127,30 +183,48 @@ class GuiaSectionCubit extends Cubit<GuiaState> {
         articleTitle: articleTitle,
       ));
 
+  void showArticle({required String articleId, required String articleTitle}) =>
+      emit(state.showArticle(articleId: articleId, articleTitle: articleTitle));
+
+  void hideArticle() => emit(state.hideArticle());
+
   void back() {
-    if (state.level == 5) {
-      // Volver del detalle de artículo a la lista de artículos (nivel 4)
-      emit(state.toLevel4(
-        key0: state.key0!, title0: state.title0!,
-        key1: state.key1!, title1: state.title1!,
-        key2: state.key2!, title2: state.title2!,
-        key3: state.key3!, title3: state.title3!,
-      ));
-    } else if (state.level == 4) {
-      emit(state.toLevel3(
-        key0: state.key0!, title0: state.title0!,
-        key1: state.key1!, title1: state.title1!,
-        key2: state.key2!, title2: state.title2!,
-      ));
+    if (state.showArticleDetail) {
+      emit(state.hideArticle().copyWith(isArticleMode: false));
+      return;
+    }
+
+    if (state.level == 4) {
+      emit(
+        state
+            .toLevel3(
+          key0: state.key0!, title0: state.title0!,
+          key1: state.key1!, title1: state.title1!,
+          key2: state.key2!, title2: state.title2!,
+        )
+            .copyWith(isArticleMode: false),
+      );
     } else if (state.level == 3) {
-      emit(state.toLevel2(
-        key0: state.key0!, title0: state.title0!,
-        key1: state.key1!, title1: state.title1!,
-      ));
+      emit(
+        state
+            .toLevel2(
+          key0: state.key0!, title0: state.title0!,
+          key1: state.key1!, title1: state.title1!,
+        )
+            .copyWith(isArticleMode: false),
+      );
     } else if (state.level == 2) {
-      emit(state.toLevel1(key0: state.key0!, title0: state.title0!));
+      emit(
+        state
+            .toLevel1(key0: state.key0!, title0: state.title0!)
+            .copyWith(isArticleMode: false),
+      );
     } else if (state.level == 1) {
-      emit(state.toLevel0());
+      emit(
+        state
+            .toLevel0()
+            .copyWith(isArticleMode: false),
+      );
     }
   }
 }
@@ -165,6 +239,8 @@ class GuiaRow {
 
 class GuiaView extends StatelessWidget {
   GuiaView({super.key});
+
+  bool isArticleMode = false;
 
   final Map<String, IconData> _iconos = const {
     'farmacos': Icons.medical_services,
@@ -185,28 +261,71 @@ class GuiaView extends StatelessWidget {
         final label = e.nombre ?? 'Sin nombre';
         return GuiaRow(id: e.id ?? '', label: label, icon: _iconForLabel(label));
       }).toList();
-    } else if (s.level == 1) {
-      final l1 = await AppDeps.I.articleRepository.fetchAllNivelesScraping(s.key0!,s.level);
-      final icon = _iconForLabel(s.title0, fallback: Icons.folder);
-      return l1.map((e) => GuiaRow(id: e.id ?? '', label: e.nombre ?? 'Sin nombre', icon: icon)).toList();
-    } else if (s.level == 2) {
-      //final l2 = await AppDeps.I.articleRepository.getAllNivel2();
-      final l2 = await AppDeps.I.articleRepository.fetchAllNivelesScraping(s.key1!,s.level);
-      final icon = _iconForLabel(s.title0, fallback: Icons.folder_open);
-      return l2.map((e) => GuiaRow(id: e.id ?? '', label: e.nombre ?? 'Sin nombre', icon: icon)).toList();
-    } else if (s.level == 3) {
-      final l3 = await AppDeps.I.articleRepository.fetchAllNivelesScraping(s.key2!,s.level);
-      const icon = Icons.description;
-      return l3.map((e) => GuiaRow(id: e.id ?? '', label: e.nombre ?? 'Sin nombre', icon: icon)).toList();
-    } else if (s.level == 4) {
-      // Lista de artículos
-      final articles = await AppDeps.I.articleRepository.getAllArticles();
+    }
+    else if (s.level == 1) {
+      final l1 = await AppDeps.I.articleRepository.fetchAllNivelesScraping(s.key0!, s.level);
+      if (l1.isNotEmpty) {
+        final icon = _iconForLabel(s.title0, fallback: Icons.folder);
+        isArticleMode = false;
+        return l1.map((e) => GuiaRow(id: e.id ?? '', label: e.nombre ?? 'Sin nombre', icon: icon)).toList();
+      }
+      final articulos = await AppDeps.I.articleRepository.getAllArticlesById(s.key0!);
+      final iconArticulos = _iconForLabel(s.title0, fallback: Icons.folder);
+      isArticleMode = true;
+      return articulos.map((e) => GuiaRow(id: e.id ?? '', label: e.tema ?? 'Sin nombre', icon: iconArticulos)).toList();
+
+    }
+    else if (s.level == 2) {
+      final l2 = await AppDeps.I.articleRepository.fetchAllNivelesScraping(s.key1!, s.level);
+      if (l2.isNotEmpty) {
+        final icon = _iconForLabel(s.title0, fallback: Icons.folder_open);
+        isArticleMode = false;
+        return l2.map((e) => GuiaRow(id: e.id ?? '', label: e.nombre ?? 'Sin nombre', icon: icon)).toList();
+      }
+      final articulos = await AppDeps.I.articleRepository.getAllArticlesById(s.key1!);
+      final iconArticulos = _iconForLabel(s.title0, fallback: Icons.folder);
+      isArticleMode = true;
+      return articulos.map((e) => GuiaRow(id: e.id ?? '', label: e.tema ?? 'Sin nombre', icon: iconArticulos)).toList();
+
+    }
+    else if (s.level == 3) {
+      print("Entooooooo vacio 3 ");
+
+      final l3 = await AppDeps.I.articleRepository.fetchAllNivelesScraping(s.key2!, s.level);
+      if (l3.isNotEmpty) {
+        const icon = Icons.description;
+        isArticleMode = false;
+
+        return l3.map((e) => GuiaRow(id: e.id ?? '', label: e.nombre ?? 'Sin nombre', icon: icon)).toList();
+      }
+      final articulos = await AppDeps.I.articleRepository.getAllArticlesById(s.key2!);
+      final iconArticulos = _iconForLabel(s.title0, fallback: Icons.folder);
+      isArticleMode = true;
+      return articulos.map((e) => GuiaRow(id: e.id ?? '', label: e.tema ?? 'Sin nombre', icon: iconArticulos)).toList();
+
+    }
+    else if (s.level == 4) {
+      print("Entooooooo vacio 2 ");
+
+      final l4 = await AppDeps.I.articleRepository.fetchAllNivelesScraping(s.key2!, s.level);
+      if (l4.isNotEmpty) {
+        const icon = Icons.description;
+        isArticleMode = false;
+        return l4.map((e) => GuiaRow(id: e.id ?? '', label: e.nombre ?? 'Sin nombre', icon: icon)).toList();
+      }
+      print("Entooooooo vacio 3 ");
+
+      final articles = await AppDeps.I.articleRepository.getAllArticlesById(s.key3!);
+      isArticleMode = true;
       const icon = Icons.article;
       return articles.map((a) {
         final label = a.tema?.isNotEmpty == true ? a.tema! : 'Sin tema';
         return GuiaRow(id: a.id ?? '', label: label, icon: icon);
       }).toList();
-    } else {
+
+    }
+    else {
+      print("Entooooooo vacio");
       // level == 5 (detalle) no usa lista
       return const <GuiaRow>[];
     }
@@ -236,7 +355,7 @@ class GuiaView extends StatelessWidget {
                         ],
                       );
                     }
-                    final title = (s.level == 5)
+                    final title = s.showArticleDetail
                         ? (s.articleTitle ?? 'Artículo')
                         : (s.title3 ?? s.title2 ?? s.title1 ?? s.title0) ?? 'Detalle';
                     return Row(
@@ -282,7 +401,7 @@ class GuiaView extends StatelessWidget {
                           child: SlideTransition(position: slide, child: child),
                         );
                       },
-                      child: s.level == 5
+                      child: s.showArticleDetail
                           ? _ArticleDetail(articleId: s.articleId!)
                           : FutureBuilder<List<GuiaRow>>(
                         key: ValueKey('level-${s.level}-${s.key0}-${s.key1}-${s.key2}-${s.key3}-${s.articleId ?? ''}'),
@@ -327,29 +446,50 @@ class GuiaView extends StatelessWidget {
                                   color: Colors.blue,
                                   onTap: () {
                                     final cubit = context.read<GuiaSectionCubit>();
-                                    if (s.level == 0) {
+                                     if (s.level == 0) {
                                       cubit.openLevel1(
                                         key0: _normalize(r.id.isNotEmpty ? r.id : r.label),
                                         title0: r.label,
                                       );
                                     } else if (s.level == 1) {
+                                      if(isArticleMode){
+                                        context.read<GuiaSectionCubit>().showArticle(
+                                          articleId: r.id,
+                                          articleTitle: r.label,
+                                        );
+                                        return;
+                                      }
                                       cubit.openLevel2(
                                         key1: _normalize(r.id.isNotEmpty ? r.id : r.label),
                                         title1: r.label,
                                       );
                                     } else if (s.level == 2) {
+                                      if(isArticleMode){
+                                        context.read<GuiaSectionCubit>().showArticle(
+                                          articleId: r.id,
+                                          articleTitle: r.label,
+                                        );
+                                        return;
+                                      }
                                       cubit.openLevel3(
                                         key2: _normalize(r.id.isNotEmpty ? r.id : r.label),
                                         title2: r.label,
                                       );
                                     } else if (s.level == 3) {
+                                      if(isArticleMode){
+                                        context.read<GuiaSectionCubit>().showArticle(
+                                          articleId: r.id,
+                                          articleTitle: r.label,
+                                        );
+                                        return;
+                                      }
                                       cubit.openLevel4(
                                         key3: _normalize(r.id.isNotEmpty ? r.id : r.label),
                                         title3: r.label,
                                       );
                                     } else if (s.level == 4) {
-                                      // Ir al detalle del artículo
-                                      cubit.openArticle(
+                                      // Ir al detalle del artículo (usar showArticle)
+                                      context.read<GuiaSectionCubit>().showArticle(
                                         articleId: r.id,
                                         articleTitle: r.label,
                                       );
@@ -381,6 +521,7 @@ class _ArticleDetail extends StatelessWidget {
 
   Future<ArticleModel?> _loadOne() async {
     try {
+      // usar el método del repo que retorna 1 artículo
       return await AppDeps.I.articleRepository.getArticleById(articleId);
     } catch (_) {
       return null;
@@ -423,15 +564,53 @@ class _ArticleDetail extends StatelessWidget {
             ],
 
             // Contenidos
+            // Contenidos
+// Contenidos
             if ((a.contenidos).isNotEmpty) ...[
-              const Text('Contenido', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+              const Text(
+                'Contenido',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+              ),
               const SizedBox(height: 8),
-              ...a.contenidos.map((c) => Padding(
+
+              ...a.contenidos.cast<String>().map((c) => Padding(
                 padding: const EdgeInsets.only(bottom: 10),
-                child: Text('• $c', style: const TextStyle(fontSize: 15)),
+                child: Html(
+                  data: c, // puede contener <table>...</table>
+                  extensions: const [
+                    TableHtmlExtension(), // habilita tablas con flutter_html_table ^3.0.0
+                  ],
+                  // ✅ firma compatible con OnTap (sin tipar los params)
+                  style: {
+                    // Si Width.percentage(100) te falla, usa auto o quítalo
+                    "table": Style(
+                      width: Width.auto(),
+                      // Opcional: ajusta paddings/bordes si quieres
+                    ),
+                    "th": Style(
+                      fontWeight: FontWeight.w700,
+                      padding: HtmlPaddings.all(6),
+                      backgroundColor: const Color(0xFFEFEFEF),
+                      border: const Border(
+                        top: BorderSide(width: 1, color: Color(0x33000000)),
+                        right: BorderSide(width: 1, color: Color(0x33000000)),
+                        bottom: BorderSide(width: 1, color: Color(0x33000000)),
+                        left: BorderSide(width: 1, color: Color(0x33000000)),
+                      ),
+                    ),
+                    "td": Style(
+                      padding: HtmlPaddings.all(6),
+                      border: const Border(
+                        top: BorderSide(width: 1, color: Color(0x33000000)),
+                        right: BorderSide(width: 1, color: Color(0x33000000)),
+                        bottom: BorderSide(width: 1, color: Color(0x33000000)),
+                        left: BorderSide(width: 1, color: Color(0x33000000)),
+                      ),
+                    ),
+                  },
+                ),
               )),
             ],
-
             const SizedBox(height: 20),
             // Metadatos opcionales
             if (a.fechaCreacion != null || a.fechaModificacion != null)
