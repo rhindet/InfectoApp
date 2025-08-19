@@ -575,40 +575,49 @@ class _ArticleDetail extends StatelessWidget {
 
               ...a.contenidos.cast<String>().map((c) => Padding(
                 padding: const EdgeInsets.only(bottom: 10),
-                child: Html(
-                  data: c, // puede contener <table>...</table>
-                  extensions: const [
-                    TableHtmlExtension(), // habilita tablas con flutter_html_table ^3.0.0
-                  ],
-                  // ✅ firma compatible con OnTap (sin tipar los params)
-                  style: {
-                    // Si Width.percentage(100) te falla, usa auto o quítalo
-                    "table": Style(
-                      width: Width.auto(),
-                      // Opcional: ajusta paddings/bordes si quieres
-                    ),
-                    "th": Style(
-                      fontWeight: FontWeight.w700,
-                      padding: HtmlPaddings.all(6),
-                      backgroundColor: const Color(0xFFEFEFEF),
-                      border: const Border(
-                        top: BorderSide(width: 1, color: Color(0x33000000)),
-                        right: BorderSide(width: 1, color: Color(0x33000000)),
-                        bottom: BorderSide(width: 1, color: Color(0x33000000)),
-                        left: BorderSide(width: 1, color: Color(0x33000000)),
-                      ),
-                    ),
-                    "td": Style(
-                      padding: HtmlPaddings.all(6),
-                      border: const Border(
-                        top: BorderSide(width: 1, color: Color(0x33000000)),
-                        right: BorderSide(width: 1, color: Color(0x33000000)),
-                        bottom: BorderSide(width: 1, color: Color(0x33000000)),
-                        left: BorderSide(width: 1, color: Color(0x33000000)),
-                      ),
-                    ),
-                  },
-                ),
+                child: SelectionArea(
+                    child:Container(
+                        child:Column(
+
+                          children: [
+                            Html(
+                              data: c, // puede contener <table>...</table>
+                              extensions: const [
+                                TableHtmlExtension(), // habilita tablas con flutter_html_table ^3.0.0
+                              ],
+                              // ✅ firma compatible con OnTap (sin tipar los params)
+                              style: {
+                                // Si Width.percentage(100) te falla, usa auto o quítalo
+                                "table": Style(
+                                  width: Width.auto(),
+                                  // Opcional: ajusta paddings/bordes si quieres
+                                ),
+                                "th": Style(
+                                  fontWeight: FontWeight.w700,
+                                  padding: HtmlPaddings.all(6),
+                                  backgroundColor: const Color(0xFFEFEFEF),
+                                  border: const Border(
+                                    top: BorderSide(width: 1, color: Color(0x33000000)),
+                                    right: BorderSide(width: 1, color: Color(0x33000000)),
+                                    bottom: BorderSide(width: 1, color: Color(0x33000000)),
+                                    left: BorderSide(width: 1, color: Color(0x33000000)),
+                                  ),
+                                ),
+                                "td": Style(
+                                  padding: HtmlPaddings.all(6),
+                                  border: const Border(
+                                    top: BorderSide(width: 1, color: Color(0x33000000)),
+                                    right: BorderSide(width: 1, color: Color(0x33000000)),
+                                    bottom: BorderSide(width: 1, color: Color(0x33000000)),
+                                    left: BorderSide(width: 1, color: Color(0x33000000)),
+                                  ),
+                                ),
+                              },
+                            ),
+                          ],
+                        )
+                    )
+                )
               )),
             ],
             const SizedBox(height: 20),

@@ -16,7 +16,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Infecto App',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.white70),
         splashFactory: NoSplash.splashFactory, // esto desactiva animación tipo ripple (Animacion al dar click en elemento de TabBar)
         splashColor: Colors.transparent,  // esto desactiva animación tipo ripple
         highlightColor: Colors.transparent, //esto desactiva animación tipo ripple
@@ -50,33 +50,40 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor:Colors.white ,
-        title: Row(
-          spacing: 40,
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-               IconButton(
-                 iconSize: 30,
-                 icon: Icon(Icons.menu),
-                 onPressed: (){
-                   showSideModal(context);
-                 },
-               ),
-                Image.asset(
-                  'assets/infecto_logo_sin_fondo.png',
-                  width: 120,
-                  height: 40,
-                ),
-              IconButton(
-                iconSize: 30,
-                icon: Icon(Icons.dark_mode),
-                onPressed: (){
-                },
-              ),
+        title: Container(
+          //color: Colors.green ,
+          child: Column(
+              children: [
+                Row(
+                  spacing: 40,
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    IconButton(
+                      iconSize: 30,
+                      icon: Icon(Icons.menu),
+                      onPressed: (){
+                        showSideModal(context);
+                      },
+                    ),
+                    Image.asset(
+                      'assets/infecto_logo_sin_fondo.png',
+                      width: 120,
+                      height: 40,
+                    ),
+                    IconButton(
+                      iconSize: 30,
+                      icon: Icon(Icons.dark_mode),
+                      onPressed: (){
+                      },
+                    ),
 
-            ],
-          ),
+                  ],
+                ),
+
+              ],
+        )
+        )
 
       ),
       body: BottomTabNavegator(),

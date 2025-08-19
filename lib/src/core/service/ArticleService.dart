@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 
 Dio createDio() {
   final dio = Dio(BaseOptions(
+    //baseUrl: 'http://192.168.213.103:3000', // cambia por tu URL
     baseUrl: 'http://192.168.0.6:3000', // cambia por tu URL
     connectTimeout: const Duration(seconds: 10),
     receiveTimeout: const Duration(seconds: 15),
