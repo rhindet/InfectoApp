@@ -581,7 +581,7 @@ class _ArticleDetail extends StatelessWidget {
 
                           children: [
                             Html(
-                              data: c, // puede contener <table>...</table>
+                              data: sanitizeFontFeatures(c),
                               extensions: const [
                                 TableHtmlExtension(), // habilita tablas con flutter_html_table ^3.0.0
                               ],
@@ -634,6 +634,28 @@ class _ArticleDetail extends StatelessWidget {
   }
 }
 
+String sanitizeFontFeatures(String html) {
+  // 1) Quita la propiedad CSS `font-feature-settings: ...;`
+  html = html.replaceAll(
+    RegExp(r'font-feature-settings\s*:\s*[^;>]*;?', caseSensitive: false),
+    '',
+  );
+
+  // 2) (Opcional) Limpia estilos vacíos "style" que quedaron con espacios o ;
+  html = html.replaceAll(
+    RegExp(r'style\s*=\s*"(\s*;?\s*)+"', caseSensitive: false),
+    '',
+  );
+
+  // 3) (Opcional) Si sospechas de valores mal formados dentro del atributo style,
+  // puedes limpiar también `font-variant` que a veces genera conflictos:
+  html = html.replaceAll(
+    RegExp(r'font-variant\s*:\s*[^;>]*;?', caseSensitive: false),
+    '',
+  );
+
+  return html;
+}
 /// ---------- Helpers ----------
 
 String _normalize(String s) => s
@@ -676,3 +698,4 @@ Widget _card({
       ? child
       : InkWell(borderRadius: BorderRadius.circular(12), onTap: onTap, child: child);
 }
+

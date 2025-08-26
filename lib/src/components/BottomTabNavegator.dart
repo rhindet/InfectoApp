@@ -67,7 +67,8 @@ class _BottomTabNavegatorState extends State<BottomTabNavegator> {
                         InicioView(),
                         Center(child: BaseAlignment(child: GuiaView())),
                         Center(child: Text("Vacunas")),
-                        Center(child: ContactoView()),
+                        Center(child: Text("Contacto")),
+                        //Center(child: ContactoView()),
                         Center(child: Text("Cómo llegar")),
                         Center(child: Text("Términos y condiciones")),
                         Center(child: Text("Acerca de")),
@@ -93,7 +94,7 @@ class _BottomTabNavegatorState extends State<BottomTabNavegator> {
                     return AnimatedSwitcher(
                       duration: isKeyboardVisible
                           ? Duration.zero                           // ocultar: sin animación
-                          : const Duration(milliseconds: 500),      // mostrar: fade-in
+                          : const Duration(milliseconds: 600),      // mostrar: fade-in
                       switchInCurve: Curves.easeIn,
                       switchOutCurve: Curves.easeOut,
                       transitionBuilder: (child, animation) =>

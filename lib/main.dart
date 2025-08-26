@@ -3,8 +3,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:infecto_migrado/src/components/CounterCubit.dart';
 import 'package:infecto_migrado/src/components/BottomTabNavegator.dart';
 import 'package:infecto_migrado/src/components/ChangePageBloc.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 void main() {
+  await dotenv.load(fileName: ".env");
+
   runApp(const MyApp());
 }
 

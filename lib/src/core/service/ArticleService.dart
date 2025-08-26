@@ -1,9 +1,10 @@
 import 'package:dio/dio.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 
 Dio createDio() {
   final dio = Dio(BaseOptions(
-    //baseUrl: 'http://192.168.213.103:3000', // cambia por tu URL
-    baseUrl: 'http://192.168.0.6:3000', // cambia por tu URL
+    baseUrl: dotenv.env['API_URL'] ?? '',
     connectTimeout: const Duration(seconds: 10),
     receiveTimeout: const Duration(seconds: 15),
     headers: {'Accept': 'application/json', 'Content-Type': 'application/json'},
