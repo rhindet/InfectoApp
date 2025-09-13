@@ -405,10 +405,20 @@ class GuiaView extends StatelessWidget {
                         child: s.showArticleDetail
                             ? _ArticleDetail(articleId: s.articleId!)
                             : BlocBuilder<ArticleSearchCubit, ArticleSearchState>(
+                          buildWhen: (prev, curr) {
+                            final sameResults = prev.results.length == curr.results.length &&
+                                prev.results.asMap().entries.every(
+                                      (e) => e.value.id == curr.results[e.key].id && e.value.label == curr.results[e.key].label,
+                                );
+                            return prev.committed != curr.committed ||
+                                prev.loading   != curr.loading   ||
+                                prev.error     != curr.error     ||
+                                !sameResults;
+                          },
                           builder: (context, search) {
-                            final hasQuery = search.query.trim().isNotEmpty;
+                            final showResults = search.loading || search.committed.trim().isNotEmpty;
 
-                            if (hasQuery) {
+                            if (showResults) {
                               if (search.loading) {
                                 return const Center(child: CircularProgressIndicator());
                               }
@@ -419,16 +429,19 @@ class GuiaView extends StatelessWidget {
                                     children: [
                                       const Text('Error al buscar artículos'),
                                       const SizedBox(height: 8),
-                                      Text(search.error!, style: const TextStyle(color: Colors.red)),
+                                      Text(search.error!, style: const TextStyle(color: Colors.red), textAlign: TextAlign.center),
                                       const SizedBox(height: 12),
                                       ElevatedButton(
-                                        onPressed: () => context.read<ArticleSearchCubit>().setQuery(search.query),
+                                        onPressed: () => context.read<ArticleSearchCubit>().search(search.committed),
                                         child: const Text('Reintentar'),
                                       ),
                                     ],
                                   ),
                                 );
                               }
+
+
+
                               final results = search.results!;
                               if (results.isEmpty) {
                                 return const Center(child: Text('Sin resultados'));

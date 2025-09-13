@@ -64,19 +64,18 @@ class _BottomTabNavegatorState extends State<BottomTabNavegator> {
                   const SizedBox(height: 5),
                   SearchBarCustomed(
                     controller: _searchCtl,
-                    onTapped: () {},
-                    // si quieres evitar filtrar en vivo, puedes quitar onChanged
                     onChanged: (text) {
-                      context.read<ArticleFilterCubit>().updateQuery(text);
-                      context.read<ArticleSearchCubit>().setQuery(text); // solo guarda el query
+                      // Solo guardas el borrador; NO busques ni limpies aquí.
+                      context.read<ArticleSearchCubit>().setQuery(text);
                     },
                     onSubmitted: (text) {
-                      context.read<ArticleSearchCubit>().search(text);  // aquí sí busca
+                      context.read<ArticleSearchCubit>().search(text); // buscar al confirmar
                     },
                     onClear: () {
-                      // limpiar estados al tocar la X
-                      context.read<ArticleFilterCubit>().updateQuery(''); // limpia filtro local
-                      context.read<ArticleSearchCubit>().clear();         // 👈 método nuevo (abajo)
+                      // Se ejecuta tanto al tocar la X como al borrar todo manualmente
+                      // Si usabas filtro local:
+                      // context.read<ArticleFilterCubit>().updateQuery('');
+                      context.read<ArticleSearchCubit>().clear(); // limpia query, committed y results
                     },
                   ),
                   Expanded(

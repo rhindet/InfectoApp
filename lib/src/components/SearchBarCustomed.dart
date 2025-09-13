@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-class SearchBarCustomed extends StatelessWidget {
+class SearchBarCustomed extends StatefulWidget {
   final TextEditingController? controller;
   final ValueChanged<String>? onChanged;
-  final ValueChanged<String>? onSubmitted;
   final VoidCallback? onTapped;
-  final VoidCallback? onClear;   // 👈 NUEVO
+  final ValueChanged<String>? onSubmitted;
+  final VoidCallback? onClear;             // 👈 NUEVO: callback unificado
   final String hint;
 
   const SearchBarCustomed({
@@ -14,17 +14,61 @@ class SearchBarCustomed extends StatelessWidget {
     this.onChanged,
     this.onSubmitted,
     this.onTapped,
-    this.onClear,                // 👈 NUEVO
+    this.onClear,
     this.hint = 'Buscar',
   });
 
   @override
+  State<SearchBarCustomed> createState() => _SearchBarCustomedState();
+}
+
+class _SearchBarCustomedState extends State<SearchBarCustomed> {
+  late final TextEditingController _ctl;
+  late final bool _ownsController;
+
+  @override
+  void initState() {
+    super.initState();
+    _ownsController = widget.controller == null;
+    _ctl = widget.controller ?? TextEditingController();
+
+    // Cuando el texto cambia a vacío manualmente, dispara onClear()
+    _ctl.addListener(() {
+      if (_ctl.text.trim().isEmpty) {
+        widget.onClear?.call();
+      }
+      // No hacemos setState aquí para evitar rebuilds innecesarios
+      // Solo lo haremos cuando sea necesario (por ejemplo, al pulsar X)
+      setState(() {}); // para mostrar/ocultar la X dinámicamente
+    });
+  }
+
+  @override
+  void dispose() {
+    if (_ownsController) {
+      _ctl.dispose();
+    }
+    super.dispose();
+  }
+
+  void _handleClear() {
+    // Limpia el campo y llama el mismo callback que el borrado manual
+    _ctl.clear();
+    widget.onClear?.call();
+    setState(() {}); // actualizar visibilidad de la X
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final hasText = _ctl.text.isNotEmpty;
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 30),
       decoration: BoxDecoration(
-        color: theme.brightness == Brightness.dark ? const Color(0xFF1E1E1E) : Colors.white,
+        color: theme.brightness == Brightness.dark
+            ? const Color(0xFF1E1E1E)
+            : Colors.white,
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
@@ -34,39 +78,34 @@ class SearchBarCustomed extends StatelessWidget {
           ),
         ],
       ),
-      child: TextField
-        (
-        controller: controller,
-        onChanged: onChanged,      // si no quieres filtrar en vivo, pásalo null
-        onSubmitted: onSubmitted,  // dispara la búsqueda aquí
-        onTap: onTapped,
+      child: TextField(
+        controller: _ctl,
+        onTap: widget.onTapped,
+        onChanged: (text) {
+          // Propaga el cambio
+          widget.onChanged?.call(text);
+          // OJO: el listener del controller ya llama onClear() cuando queda vacío
+        },
+        onSubmitted: widget.onSubmitted,
         textInputAction: TextInputAction.search,
         decoration: InputDecoration(
-          hintText: hint,
-          hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 16),
+          hintText: widget.hint,
+          hintStyle: TextStyle(
+            color: Colors.grey.shade400,
+            fontSize: 16,
+          ),
           prefixIcon: Icon(Icons.search, color: Colors.grey.shade400),
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 14),
-          // 👇 Botón de X que NO llama onChanged('') para evitar re-filtrar
-          suffixIcon: controller != null
-              ? ValueListenableBuilder<TextEditingValue>(
-            valueListenable: controller!,
-            builder: (context, value, child) {
-              if (value.text.isEmpty) return const SizedBox.shrink();
-              return IconButton(
-                icon: const Icon(Icons.clear, color: Colors.grey),
-                onPressed: () {
-                  // 1) limpiar texto
-                  controller!.clear();
-                  // 2) accionar limpieza de resultados
-                  if (onClear != null) onClear!();
-                  // 3) opcional: ocultar teclado
-                  // FocusScope.of(context).unfocus();
-                },
-              );
-            },
+
+          // 👇 misma experiencia: tocar X o borrar manual = onClear()
+          suffixIcon: hasText
+              ? IconButton(
+            tooltip: 'Borrar',
+            icon: const Icon(Icons.clear),
+            onPressed: _handleClear,
           )
               : null,
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 14),
         ),
       ),
     );
