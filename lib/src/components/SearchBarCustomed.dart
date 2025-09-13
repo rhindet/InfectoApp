@@ -1,43 +1,73 @@
 import 'package:flutter/material.dart';
 
 class SearchBarCustomed extends StatelessWidget {
-  final VoidCallback? onTapped;
+  final TextEditingController? controller;
   final ValueChanged<String>? onChanged;
+  final VoidCallback? onTapped;
   final ValueChanged<String>? onSubmitted;
-  final TextEditingController controller; // 👈 requerido para leer el texto al tocar el botón
+  final String hint;
 
   const SearchBarCustomed({
     super.key,
-    required this.controller,
-    this.onTapped,
+    this.controller,
     this.onChanged,
     this.onSubmitted,
+    this.hint = 'Buscar',
+    this.onTapped,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+    final theme = Theme.of(context);
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 30),
+      decoration: BoxDecoration(
+        color: theme.brightness == Brightness.dark
+            ? const Color(0xFF1E1E1E)
+            : Colors.white,
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.07),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       child: TextField(
         controller: controller,
-        onTap: onTapped,
         onChanged: onChanged,
-        onSubmitted: onSubmitted, // Enter del teclado
+        onSubmitted: onSubmitted,
+        onTap: onTapped,
+        textInputAction: TextInputAction.search,
         decoration: InputDecoration(
-          hintText: 'Buscar artículos (ej: paracetamol)',
-          prefixIcon: const Icon(Icons.search),
-          suffixIcon: IconButton(
-            tooltip: 'Buscar',
-            icon: const Icon(Icons.arrow_forward),
-            onPressed: () {
-              if (onSubmitted != null) {
-                onSubmitted!(controller.text); // click del botón = disparar búsqueda
-              }
-            },
+          hintText: hint,
+          hintStyle: TextStyle(
+            color: Colors.grey.shade400,
+            fontSize: 16,
           ),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-          isDense: true,
-          contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+          prefixIcon: Icon(Icons.search, color: Colors.grey.shade400),
+          border: InputBorder.none,
+          contentPadding:
+          const EdgeInsets.symmetric(horizontal: 4, vertical: 14),
+          // 👇 Botón "X" para limpiar texto
+          suffixIcon: controller != null
+              ? ValueListenableBuilder<TextEditingValue>(
+            valueListenable: controller!,
+            builder: (context, value, child) {
+              if (value.text.isEmpty) {
+                return const SizedBox.shrink();
+              }
+              return IconButton(
+                icon: const Icon(Icons.clear, color: Colors.grey),
+                onPressed: () {
+                  controller!.clear();
+                  if (onChanged != null) onChanged!('');
+                },
+              );
+            },
+          )
+              : null,
         ),
       ),
     );

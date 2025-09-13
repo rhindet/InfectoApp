@@ -22,7 +22,6 @@ class _BottomTabNavegatorState extends State<BottomTabNavegator> {
   int _bottomNavIndex = 0;
   final TextEditingController _searchCtl = TextEditingController(); // 👈
 
-
   @override
   void initState() {
     super.initState();
@@ -32,20 +31,24 @@ class _BottomTabNavegatorState extends State<BottomTabNavegator> {
   @override
   void dispose() {
     pageController.dispose();
+    _searchCtl.dispose(); // 👈 importante
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-
     return Container(
       child: BlocListener<ChangePageBloc, int>(
         listener: (context, state) {
-          pageController.jumpToPage(state);
+          // Limita el rango a las páginas que maneja el bottom nav (0..3)
+          if (state >= 0 && state <= 3) {
+            pageController.jumpToPage(state);
+          }
         },
         child: BlocBuilder<ChangePageBloc, int>(
           builder: (context, state) {
-            int currentIndexForBottomNav = (state >= 0 && state <= 3) ? state : _bottomNavIndex;
+            final int currentIndexForBottomNav =
+            (state >= 0 && state <= 3) ? state : _bottomNavIndex;
 
             if (state >= 0 && state <= 3) {
               _bottomNavIndex = state;
@@ -57,17 +60,17 @@ class _BottomTabNavegatorState extends State<BottomTabNavegator> {
                 children: [
                   const SizedBox(height: 5),
                   SearchBarCustomed(
-                    controller: _searchCtl,            // 👈 pasa el controller
+                    controller: _searchCtl, // 👈 pasa el controller
                     onTapped: () {},
                     onChanged: (text) {
+
                       // opcional: filtro local sobre la lista ya cargada
                       context.read<ArticleFilterCubit>().updateQuery(text);
 
                       // NO llamar backend aquí
-                      context.read<ArticleSearchCubit>().setQuery(text); // solo guarda el texto
+                      context.read<ArticleSearchCubit>().setQuery(text);
                     },
-                    onSubmitted: (text) {
-                      // SOLO aquí llamas al backend (Enter o botón)
+                    onSubmitted: (text){
                       context.read<ArticleSearchCubit>().search(text);
                     },
                   ),
@@ -75,30 +78,40 @@ class _BottomTabNavegatorState extends State<BottomTabNavegator> {
                     child: PageView(
                       controller: pageController,
                       physics: const NeverScrollableScrollPhysics(),
-                      children:  [
-                        Center(child: Text("Calculadora")),
-                        InicioView(),
-                        Center(child: BaseAlignment(child: GuiaView())),
-                        Center(child:
-                            BaseAlignment(child:Column(
-                              children: [
-                                Text('Esquema Nacional de Vacunación', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
-                               SizedBox(height: 10,),
-                                Image.asset(
-                                  'assets/vacunacion.jpg',
+                      children: [
+                        const Center(child: Text("Calculadora")),
+                        const InicioView(),
+                        Center(child: BaseAlignment(child:  GuiaView())),
+                        Center(
+                          child: BaseAlignment(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: const [
+                                Text(
+                                  'Esquema Nacional de Vacunación',
+                                  style: TextStyle(
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                SizedBox(height: 10),
+                                // Asegúrate de tener este asset en pubspec.yaml
+                                Image(
+                                  image: AssetImage('assets/vacunacion.jpg'),
                                   width: 500,
                                   height: 500,
+                                  fit: BoxFit.contain,
                                 ),
                               ],
-                            ) )
-
+                            ),
+                          ),
                         ),
-                        Center(child: Text("Contacto")),
-                        //Center(child: ContactoView()),
-                        Center(child: Text("Cómo llegar")),
-                        Center(child: Text("Términos y condiciones")),
-                        Center(child: Text("Acerca de")),
-                        Center(child: Text("<Farmacos>")),
+                        const Center(child: Text("Contacto")),
+                        // const Center(child: ContactoView()),
+                        const Center(child: Text("Cómo llegar")),
+                        const Center(child: Text("Términos y condiciones")),
+                        const Center(child: Text("Acerca de")),
+                        const Center(child: Text("<Farmacos>")),
                       ],
                     ),
                   ),
@@ -109,23 +122,19 @@ class _BottomTabNavegatorState extends State<BottomTabNavegator> {
                 duration: const Duration(milliseconds: 900),
                 switchInCurve: Curves.easeIn,
                 switchOutCurve: Curves.easeOut,
-                transitionBuilder: (child, animation) {
-                  return FadeTransition(
-                    opacity: animation,
-                    child: child,
-                  );
-                },
+                transitionBuilder: (child, animation) =>
+                    FadeTransition(opacity: animation, child: child),
                 child: KeyboardVisibilityBuilder(
                   builder: (context, isKeyboardVisible) {
                     return AnimatedSwitcher(
                       duration: isKeyboardVisible
-                          ? Duration.zero                           // ocultar: sin animación
-                          : const Duration(milliseconds: 600),      // mostrar: fade-in
+                          ? Duration.zero // ocultar: sin animación
+                          : const Duration(milliseconds: 600), // mostrar: fade-in
                       switchInCurve: Curves.easeIn,
                       switchOutCurve: Curves.easeOut,
                       transitionBuilder: (child, animation) =>
                           FadeTransition(opacity: animation, child: child),
-                      // 🔧 Evita AnimatedSize durante layout
+                      // 🔧 Evita AnimatedSize durante layout (no animar tamaño)
                       layoutBuilder: (Widget? currentChild, List<Widget> previousChildren) {
                         return currentChild ?? const SizedBox.shrink();
                       },
@@ -134,8 +143,9 @@ class _BottomTabNavegatorState extends State<BottomTabNavegator> {
                           : _BottomBar(
                         key: const ValueKey('shown'),
                         currentIndex: currentIndexForBottomNav,
-                        onTap: (i) =>
-                            context.read<ChangePageBloc>().add(CambiarPagina(i)),
+                        onTap: (i) => context
+                            .read<ChangePageBloc>()
+                            .add(CambiarPagina(i)),
                         buildTabIcon: _buildTabIcon,
                       ),
                     );
@@ -149,23 +159,13 @@ class _BottomTabNavegatorState extends State<BottomTabNavegator> {
     );
   }
 
-  //**
- // Ese error lo provoca AnimatedCrossFade porque usa
- // internamente AnimatedSize, que está intentando animar el
- // tamaño justo durante el performLayout cuando aparece/desaparece el teclado.
- // Arreglo mínimo (solo cambia el builder de KeyboardVisibilityBuilder, nada más):
- // quita AnimatedCrossFade y usa AnimatedSwitcher con un layoutBuilder que desactiva
-  //la animación de tamaño.
-
-  //
-
   /// Widget auxiliar para construir íconos con barra amarilla arriba si está seleccionado
   Widget _buildTabIcon(bool isSelected, IconData icon) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         AnimatedContainer(
-          duration:  Duration(milliseconds: 300),
+          duration: const Duration(milliseconds: 300),
           curve: Curves.easeInOut,
           height: 4,
           width: isSelected ? 24 : 0,
@@ -174,7 +174,7 @@ class _BottomTabNavegatorState extends State<BottomTabNavegator> {
             borderRadius: BorderRadius.circular(10), // Esquinas redondeadas
           ),
         ),
-         SizedBox(height: 10),
+        const SizedBox(height: 10),
         Icon(icon, size: 18),
       ],
     );
@@ -186,8 +186,9 @@ class _BottomBar extends StatelessWidget {
   final int currentIndex;
   final void Function(int) onTap;
   final Widget Function(bool, IconData) buildTabIcon;
+
   const _BottomBar({
-    super.key, // ← agrega esto
+    super.key, // ← conserva la key para AnimatedSwitcher
     required this.currentIndex,
     required this.onTap,
     required this.buildTabIcon,
