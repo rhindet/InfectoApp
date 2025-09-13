@@ -7,7 +7,8 @@ import '../views/GuiaView.dart';
 import 'BaseAlignment.dart';
 import 'SearchBarCustomed.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
-
+import 'article_filter_cubit.dart';
+import 'article_search_cubit.dart';
 
 class BottomTabNavegator extends StatefulWidget {
   const BottomTabNavegator({super.key});
@@ -19,6 +20,8 @@ class BottomTabNavegator extends StatefulWidget {
 class _BottomTabNavegatorState extends State<BottomTabNavegator> {
   late final PageController pageController;
   int _bottomNavIndex = 0;
+  final TextEditingController _searchCtl = TextEditingController(); // 👈
+
 
   @override
   void initState() {
@@ -54,8 +57,18 @@ class _BottomTabNavegatorState extends State<BottomTabNavegator> {
                 children: [
                   const SizedBox(height: 5),
                   SearchBarCustomed(
-                    onTapped: () {
+                    controller: _searchCtl,            // 👈 pasa el controller
+                    onTapped: () {},
+                    onChanged: (text) {
+                      // opcional: filtro local sobre la lista ya cargada
+                      context.read<ArticleFilterCubit>().updateQuery(text);
 
+                      // NO llamar backend aquí
+                      context.read<ArticleSearchCubit>().setQuery(text); // solo guarda el texto
+                    },
+                    onSubmitted: (text) {
+                      // SOLO aquí llamas al backend (Enter o botón)
+                      context.read<ArticleSearchCubit>().search(text);
                     },
                   ),
                   Expanded(
@@ -66,7 +79,20 @@ class _BottomTabNavegatorState extends State<BottomTabNavegator> {
                         Center(child: Text("Calculadora")),
                         InicioView(),
                         Center(child: BaseAlignment(child: GuiaView())),
-                        Center(child: Text("Vacunas")),
+                        Center(child:
+                            BaseAlignment(child:Column(
+                              children: [
+                                Text('Esquema Nacional de Vacunación', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+                               SizedBox(height: 10,),
+                                Image.asset(
+                                  'assets/vacunacion.jpg',
+                                  width: 500,
+                                  height: 500,
+                                ),
+                              ],
+                            ) )
+
+                        ),
                         Center(child: Text("Contacto")),
                         //Center(child: ContactoView()),
                         Center(child: Text("Cómo llegar")),

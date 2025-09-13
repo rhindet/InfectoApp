@@ -28,6 +28,8 @@ class ArticleService {
       throw Exception('Error al obtener artículo: ${e.message}');
     }
   }
+
+
   Future<Map<String, dynamic>> fetchArticlesById(String id) async {
     try {
       final res = await _dio.get('/articles/$id'); // <- ruta típica REST
@@ -56,6 +58,27 @@ class ArticleService {
       throw Exception('Error al listar artículos: ${e.message}');
     }
   }
+
+  // Flutter - ArticleService con Dio
+  Future<List<dynamic>> fetchArticlesByWord(String text) async {
+    try {
+
+      final res = await _dio.get(
+        '/articles/search',
+        queryParameters: {'q': text, 'limit': 20, 'page': 1}, // opcional
+      );
+      // si el backend devuelve { page, limit, total, items: [...] }
+      final data = res.data['items'] as List<dynamic>;
+      return data;
+
+      // si devolvieras una lista directa, sería:
+      // return res.data as List<dynamic>;
+    } on DioException catch (e) {
+      throw Exception('Error al buscar artículos: ${e.message}');
+    }
+  }
+
+
 
   Future<List<dynamic>> fetchAllNivel0() async {
     try {

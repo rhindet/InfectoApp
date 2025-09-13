@@ -1,56 +1,43 @@
 import 'package:flutter/material.dart';
 
 class SearchBarCustomed extends StatelessWidget {
-  final TextEditingController? controller;
+  final VoidCallback? onTapped;
   final ValueChanged<String>? onChanged;
-  final VoidCallback? onTapped;                // <-- tipo correcto
   final ValueChanged<String>? onSubmitted;
-  final String hint;
+  final TextEditingController controller; // 👈 requerido para leer el texto al tocar el botón
 
   const SearchBarCustomed({
     super.key,
-    this.controller,
+    required this.controller,
+    this.onTapped,
     this.onChanged,
     this.onSubmitted,
-    this.hint = 'Buscar',
-    this.onTapped
   });
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 30),
-      decoration: BoxDecoration(
-        color: theme.brightness == Brightness.dark
-            ? const Color(0xFF1E1E1E)
-            : Colors.white,
-        borderRadius: BorderRadius.circular(28),
-        boxShadow: [
-          // Sombra muy suave como en iOS
-          BoxShadow(
-            color: Colors.black.withOpacity(0.07),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
       child: TextField(
         controller: controller,
-        onChanged: onChanged,
-        onSubmitted: onSubmitted,
         onTap: onTapped,
-        textInputAction: TextInputAction.search,
+        onChanged: onChanged,
+        onSubmitted: onSubmitted, // Enter del teclado
         decoration: InputDecoration(
-          hintText: hint,
-          hintStyle: TextStyle(
-            color: Colors.grey.shade400,
-            fontSize: 16,
+          hintText: 'Buscar artículos (ej: paracetamol)',
+          prefixIcon: const Icon(Icons.search),
+          suffixIcon: IconButton(
+            tooltip: 'Buscar',
+            icon: const Icon(Icons.arrow_forward),
+            onPressed: () {
+              if (onSubmitted != null) {
+                onSubmitted!(controller.text); // click del botón = disparar búsqueda
+              }
+            },
           ),
-          prefixIcon: Icon(Icons.search, color: Colors.grey.shade400),
-          border: InputBorder.none,
-          // padding para centrar bien el contenido
-          contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 14),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          isDense: true,
+          contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
         ),
       ),
     );

@@ -57,6 +57,16 @@ class ArticleRepository {
     // final list = (json['data'] as List).map(...).toList();
   }
 
+  Future<List<ArticleModel>> getAllArticlesByWord(String text) async {
+    final list = await service.fetchArticlesByWord(text); // List<dynamic>
+    return list
+        .map((e) => ArticleModel.fromJson(e as Map<String, dynamic>))
+        .toList();
+    // si tu API regresa {"data":[...]}:
+    // final list = (json['data'] as List).map(...).toList();
+  }
+
+
 
   Future<List<Nivel0Model>> getAllNivel0() async {
     final list = await service.fetchAllNivel0(); // List<dynamic>

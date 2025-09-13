@@ -1,25 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_html/flutter_html.dart';
+import 'package:flutter_html_table/flutter_html_table.dart';
 import '../core/Repositories/AppDeps.dart';
-import '../core/models/Nivel0Model.dart';
-import '../core/models/Nivel1Model.dart';
-import '../core/models/Nivel2Model.dart';
-import '../core/models/Nivel3Model.dart';
-import '../core/models/Nivel4Model.dart';
 import '../core/models/ArticleModel.dart';
-import 'package:flutter_html/flutter_html.dart';
-import 'package:flutter_html_table/flutter_html_table.dart'; // <-- extensión de tablas
-import 'package:html/dom.dart' as dom; // opcional si lo usas en otros lados
-
+import '../components/article_filter_cubit.dart';
+import '../components/article_search_cubit.dart';
+import '../utils/highlight.dart';
 /// --------- Estado de navegación (0..5 niveles) ----------
 class GuiaState {
   final bool isArticleMode;
-  final int level;        // 0..5  (5 = detalle de artículo)
-  final String? key0;     final String? title0;
-  final String? key1;     final String? title1;
-  final String? key2;     final String? title2;
-  final String? key3;     final String? title3;
+  final int level; // 0..5  (5 = detalle de artículo)
+  final String? key0; final String? title0;
+  final String? key1; final String? title1;
+  final String? key2; final String? title2;
+  final String? key3; final String? title3;
 
   // Nivel 5 (detalle de artículo)
   final String? articleId;
@@ -36,8 +31,7 @@ class GuiaState {
     this.articleId,
     this.articleTitle,
     this.showArticleDetail = false,
-    this.isArticleMode = false,   // 👈 default
-
+    this.isArticleMode = false,
   });
 
   GuiaState copyWith({
@@ -120,7 +114,7 @@ class GuiaState {
 
   GuiaState showArticle({required String articleId, required String articleTitle}) =>
       GuiaState(
-        level: level, // mantenemos el nivel actual
+        level: level,
         key0: key0, title0: title0,
         key1: key1, title1: title1,
         key2: key2, title2: title2,
@@ -130,19 +124,17 @@ class GuiaState {
         showArticleDetail: true,
       );
 
-  GuiaState hideArticle() =>
-      GuiaState(
-        level: level,
-        key0: key0, title0: title0,
-        key1: key1, title1: title1,
-        key2: key2, title2: title2,
-        key3: key3, title3: title3,
-        articleId: null,
-        articleTitle: null,
-        showArticleDetail: false,
-      );
-} // fin GuiaSTATE
-
+  GuiaState hideArticle() => GuiaState(
+    level: level,
+    key0: key0, title0: title0,
+    key1: key1, title1: title1,
+    key2: key2, title2: title2,
+    key3: key3, title3: title3,
+    articleId: null,
+    articleTitle: null,
+    showArticleDetail: false,
+  );
+}
 
 /// Cubit para manejar navegación
 class GuiaSectionCubit extends Cubit<GuiaState> {
@@ -154,7 +146,7 @@ class GuiaSectionCubit extends Cubit<GuiaState> {
   void openLevel2({required String key1, required String title1}) =>
       emit(state.toLevel2(
         key0: state.key0!, title0: state.title0!,
-        key1: key1,       title1: title1,
+        key1: key1, title1: title1,
       ));
 
   void openLevel3({required String key2, required String title2}) =>
@@ -220,11 +212,7 @@ class GuiaSectionCubit extends Cubit<GuiaState> {
             .copyWith(isArticleMode: false),
       );
     } else if (state.level == 1) {
-      emit(
-        state
-            .toLevel0()
-            .copyWith(isArticleMode: false),
-      );
+      emit(state.toLevel0().copyWith(isArticleMode: false));
     }
   }
 }
@@ -289,8 +277,6 @@ class GuiaView extends StatelessWidget {
 
     }
     else if (s.level == 3) {
-      print("Entooooooo vacio 3 ");
-
       final l3 = await AppDeps.I.articleRepository.fetchAllNivelesScraping(s.key2!, s.level);
       if (l3.isNotEmpty) {
         const icon = Icons.description;
@@ -305,15 +291,12 @@ class GuiaView extends StatelessWidget {
 
     }
     else if (s.level == 4) {
-      print("Entooooooo vacio 2 ");
-
       final l4 = await AppDeps.I.articleRepository.fetchAllNivelesScraping(s.key2!, s.level);
       if (l4.isNotEmpty) {
         const icon = Icons.description;
         isArticleMode = false;
         return l4.map((e) => GuiaRow(id: e.id ?? '', label: e.nombre ?? 'Sin nombre', icon: icon)).toList();
       }
-      print("Entooooooo vacio 3 ");
 
       final articles = await AppDeps.I.articleRepository.getAllArticlesById(s.key3!);
       isArticleMode = true;
@@ -325,8 +308,6 @@ class GuiaView extends StatelessWidget {
 
     }
     else {
-      print("Entooooooo vacio");
-      // level == 5 (detalle) no usa lista
       return const <GuiaRow>[];
     }
   }
@@ -392,112 +373,113 @@ class GuiaView extends StatelessWidget {
                       switchInCurve: Curves.easeOut,
                       switchOutCurve: Curves.easeIn,
                       transitionBuilder: (child, anim) {
-                        final slide = Tween<Offset>(
-                          begin: const Offset(0.06, 0),
-                          end: Offset.zero,
-                        ).animate(anim);
-                        return FadeTransition(
-                          opacity: anim,
-                          child: SlideTransition(position: slide, child: child),
-                        );
+                        final slide = Tween<Offset>(begin: const Offset(0.06, 0), end: Offset.zero).animate(anim);
+                        return FadeTransition(opacity: anim, child: SlideTransition(position: slide, child: child));
                       },
                       child: s.showArticleDetail
                           ? _ArticleDetail(articleId: s.articleId!)
-                          : FutureBuilder<List<GuiaRow>>(
-                        key: ValueKey('level-${s.level}-${s.key0}-${s.key1}-${s.key2}-${s.key3}-${s.articleId ?? ''}'),
-                        future: _loadRows(s),
-                        builder: (context, snap) {
-                          if (snap.connectionState == ConnectionState.waiting) {
-                            return const Center(child: CircularProgressIndicator());
-                          }
-                          if (snap.hasError) {
-                            return Center(
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Text('Ocurrió un error'),
-                                  const SizedBox(height: 8),
-                                  Text('${snap.error}',
-                                      style: const TextStyle(color: Colors.red),
-                                      textAlign: TextAlign.center),
-                                  const SizedBox(height: 12),
-                                  ElevatedButton(
-                                    onPressed: () => (context as Element).markNeedsBuild(),
-                                    child: const Text('Reintentar'),
-                                  ),
-                                ],
-                              ),
-                            );
-                          }
-                          final rows = snap.data ?? const <GuiaRow>[];
-                          if (rows.isEmpty) return const Center(child: Text('Sin datos'));
+                          : BlocBuilder<ArticleSearchCubit, ArticleSearchState>(
+                        builder: (context, search) {
+                          final hasQuery = search.query.trim().isNotEmpty;
 
-                          return RefreshIndicator(
-                            onRefresh: () async => (context as Element).markNeedsBuild(),
-                            child: ListView.separated(
+                          if (hasQuery) {
+                            if (search.loading) {
+                              return const Center(child: CircularProgressIndicator());
+                            }
+                            if (search.error != null) {
+                              return Center(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Text('Error al buscar artículos'),
+                                    const SizedBox(height: 8),
+                                    Text(search.error!, style: const TextStyle(color: Colors.red)),
+                                    const SizedBox(height: 12),
+                                    ElevatedButton(
+                                      onPressed: () => context.read<ArticleSearchCubit>().setQuery(search.query),
+                                      child: const Text('Reintentar'),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }
+                            final results = search.results!;
+                            if (results.isEmpty) {
+                              return const Center(child: Text('Sin resultados'));
+                            }
+                            // 👉 Lista de resultados de búsqueda
+                            return ListView.separated(
                               padding: const EdgeInsets.symmetric(horizontal: 20),
-                              itemCount: rows.length,
+                              itemCount: results.length,
                               separatorBuilder: (_, __) => const SizedBox(height: 12),
                               itemBuilder: (context, i) {
-                                final r = rows[i];
+                                final r = results[i];
                                 return _card(
-                                  icon: r.icon,
+                                  icon: Icons.article,
                                   label: r.label,
                                   color: Colors.blue,
                                   onTap: () {
-                                    final cubit = context.read<GuiaSectionCubit>();
-                                     if (s.level == 0) {
-                                      cubit.openLevel1(
-                                        key0: _normalize(r.id.isNotEmpty ? r.id : r.label),
-                                        title0: r.label,
-                                      );
-                                    } else if (s.level == 1) {
-                                      if(isArticleMode){
-                                        context.read<GuiaSectionCubit>().showArticle(
-                                          articleId: r.id,
-                                          articleTitle: r.label,
-                                        );
-                                        return;
-                                      }
-                                      cubit.openLevel2(
-                                        key1: _normalize(r.id.isNotEmpty ? r.id : r.label),
-                                        title1: r.label,
-                                      );
-                                    } else if (s.level == 2) {
-                                      if(isArticleMode){
-                                        context.read<GuiaSectionCubit>().showArticle(
-                                          articleId: r.id,
-                                          articleTitle: r.label,
-                                        );
-                                        return;
-                                      }
-                                      cubit.openLevel3(
-                                        key2: _normalize(r.id.isNotEmpty ? r.id : r.label),
-                                        title2: r.label,
-                                      );
-                                    } else if (s.level == 3) {
-                                      if(isArticleMode){
-                                        context.read<GuiaSectionCubit>().showArticle(
-                                          articleId: r.id,
-                                          articleTitle: r.label,
-                                        );
-                                        return;
-                                      }
-                                      cubit.openLevel4(
-                                        key3: _normalize(r.id.isNotEmpty ? r.id : r.label),
-                                        title3: r.label,
-                                      );
-                                    } else if (s.level == 4) {
-                                      // Ir al detalle del artículo (usar showArticle)
-                                      context.read<GuiaSectionCubit>().showArticle(
-                                        articleId: r.id,
-                                        articleTitle: r.label,
-                                      );
-                                    }
+                                    // Abre el detalle directamente
+                                    context.read<GuiaSectionCubit>().showArticle(
+                                      articleId: r.id,
+                                      articleTitle: r.label,
+                                    );
                                   },
                                 );
                               },
-                            ),
+                            );
+                          }
+
+                          // 🔁 Sin query → comportamiento jerárquico original
+                          return FutureBuilder<List<GuiaRow>>(
+                            key: ValueKey('level-${s.level}-${s.key0}-${s.key1}-${s.key2}-${s.key3}-${s.articleId ?? ''}'),
+                            future: _loadRows(s),
+                            builder: (context, snap) {
+                              if (snap.connectionState == ConnectionState.waiting) {
+                                return const Center(child: CircularProgressIndicator());
+                              }
+                              if (snap.hasError) {
+                                return Center(
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Text('Ocurrió un error'),
+                                      const SizedBox(height: 8),
+                                      Text('${snap.error}', style: const TextStyle(color: Colors.red), textAlign: TextAlign.center),
+                                      const SizedBox(height: 12),
+                                      ElevatedButton(
+                                        onPressed: () => (context as Element).markNeedsBuild(),
+                                        child: const Text('Reintentar'),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }
+                              final rows = snap.data ?? const <GuiaRow>[];
+                              if (rows.isEmpty) return const Center(child: Text('Sin datos'));
+
+                              return RefreshIndicator(
+                                onRefresh: () async => (context as Element).markNeedsBuild(),
+                                child: ListView.separated(
+                                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                                  itemCount: rows.length,
+                                  separatorBuilder: (_, __) => const SizedBox(height: 12),
+                                  itemBuilder: (context, i) {
+                                    final r = rows[i];
+                                    return _card(
+                                      icon: r.icon,
+                                      label: r.label,
+                                      color: Colors.blue,
+                                      onTap: () {
+                                        final cubit = context.read<GuiaSectionCubit>();
+                                        // (tu onTap original tal cual)
+                                        // ...
+                                      },
+                                    );
+                                  },
+                                ),
+                              );
+                            },
                           );
                         },
                       ),
@@ -521,7 +503,6 @@ class _ArticleDetail extends StatelessWidget {
 
   Future<ArticleModel?> _loadOne() async {
     try {
-      // usar el método del repo que retorna 1 artículo
       return await AppDeps.I.articleRepository.getArticleById(articleId);
     } catch (_) {
       return null;
@@ -545,82 +526,42 @@ class _ArticleDetail extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
           children: [
             // Tema
-            Text(
-              a.tema ?? 'Sin tema',
-              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
+            //Text(
+            //a.tema ?? 'Sin tema',
+            // style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            // ),
+            // const SizedBox(height: 12),
 
             // Subtemas
             if ((a.subtemas).isNotEmpty) ...[
-              const Text('Subtemas', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: -8,
-                children: a.subtemas.map((s) => Chip(label: Text(s))).toList(),
-              ),
-              const SizedBox(height: 16),
+              //const Text('Subtemas', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+              //const SizedBox(height: 8),
+              // Wrap(
+              //  spacing: 8,
+              //  runSpacing: -8,
+              //  children: a.subtemas.map((s) => Chip(label: Text(s))).toList(),
+              //  ),
+              // const SizedBox(height: 16),
             ],
 
             // Contenidos
-            // Contenidos
-// Contenidos
             if ((a.contenidos).isNotEmpty) ...[
-              const Text(
-                'Contenido',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-              ),
+              //const Text('Contenido', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
               const SizedBox(height: 8),
 
-              ...a.contenidos.cast<String>().map((c) => Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: SelectionArea(
-                    child:Container(
-                        child:Column(
-
-                          children: [
-                            Html(
-                              data: sanitizeFontFeatures(c),
-                              extensions: const [
-                                TableHtmlExtension(), // habilita tablas con flutter_html_table ^3.0.0
-                              ],
-                              // ✅ firma compatible con OnTap (sin tipar los params)
-                              style: {
-                                // Si Width.percentage(100) te falla, usa auto o quítalo
-                                "table": Style(
-                                  width: Width.auto(),
-                                  // Opcional: ajusta paddings/bordes si quieres
-                                ),
-                                "th": Style(
-                                  fontWeight: FontWeight.w700,
-                                  padding: HtmlPaddings.all(6),
-                                  backgroundColor: const Color(0xFFEFEFEF),
-                                  border: const Border(
-                                    top: BorderSide(width: 1, color: Color(0x33000000)),
-                                    right: BorderSide(width: 1, color: Color(0x33000000)),
-                                    bottom: BorderSide(width: 1, color: Color(0x33000000)),
-                                    left: BorderSide(width: 1, color: Color(0x33000000)),
-                                  ),
-                                ),
-                                "td": Style(
-                                  padding: HtmlPaddings.all(6),
-                                  border: const Border(
-                                    top: BorderSide(width: 1, color: Color(0x33000000)),
-                                    right: BorderSide(width: 1, color: Color(0x33000000)),
-                                    bottom: BorderSide(width: 1, color: Color(0x33000000)),
-                                    left: BorderSide(width: 1, color: Color(0x33000000)),
-                                  ),
-                                ),
-                              },
-                            ),
-                          ],
-                        )
-                    )
-                )
-              )),
+              // 👇 Solo las tablas tienen scroll horizontal
+              ...a.contenidos
+                  .cast<String>()
+                  .expand((c) => _buildHtmlSegments(
+                c,
+                context,
+                context.read<ArticleSearchCubit>().state.query, // 👈 pasa el query actual
+              ))
+                  .toList(),
             ],
+
             const SizedBox(height: 20),
+
             // Metadatos opcionales
             if (a.fechaCreacion != null || a.fechaModificacion != null)
               Text(
@@ -634,28 +575,6 @@ class _ArticleDetail extends StatelessWidget {
   }
 }
 
-String sanitizeFontFeatures(String html) {
-  // 1) Quita la propiedad CSS `font-feature-settings: ...;`
-  html = html.replaceAll(
-    RegExp(r'font-feature-settings\s*:\s*[^;>]*;?', caseSensitive: false),
-    '',
-  );
-
-  // 2) (Opcional) Limpia estilos vacíos "style" que quedaron con espacios o ;
-  html = html.replaceAll(
-    RegExp(r'style\s*=\s*"(\s*;?\s*)+"', caseSensitive: false),
-    '',
-  );
-
-  // 3) (Opcional) Si sospechas de valores mal formados dentro del atributo style,
-  // puedes limpiar también `font-variant` que a veces genera conflictos:
-  html = html.replaceAll(
-    RegExp(r'font-variant\s*:\s*[^;>]*;?', caseSensitive: false),
-    '',
-  );
-
-  return html;
-}
 /// ---------- Helpers ----------
 
 String _normalize(String s) => s
@@ -699,3 +618,281 @@ Widget _card({
       : InkWell(borderRadius: BorderRadius.circular(12), onTap: onTap, child: child);
 }
 
+/// Limpia propiedades problemáticas del HTML (opcional)
+String sanitizeFontFeatures(String html) {
+  html = html.replaceAll(
+    RegExp(r'font-feature-settings\s*:\s*[^;>]*;?', caseSensitive: false),
+    '',
+  );
+  html = html.replaceAll(
+    RegExp(r'style\s*=\s*"(\s*;?\s*)+"', caseSensitive: false),
+    '',
+  );
+  html = html.replaceAll(
+    RegExp(r'font-variant\s*:\s*[^;>]*;?', caseSensitive: false),
+    '',
+  );
+  return html;
+}
+
+/// --- utils: partir el html en texto normal y tablas ---
+final _tableRx = RegExp(
+  r'<table[\s\S]*?</table>',
+  caseSensitive: false,
+  dotAll: true,
+);
+
+List<Widget> _buildHtmlSegments(String html, BuildContext context, String highlightQuery) {
+  final widgets = <Widget>[];
+  int last = 0;
+
+  for (final m in _tableRx.allMatches(html)) {
+    // 1) texto antes de la tabla
+    if (m.start > last) {
+      final before = html.substring(last, m.start).trim();
+      if (before.isNotEmpty) {
+        widgets.add(
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: SelectionArea(
+              child: Html(
+                data: highlightHtml(sanitizeFontFeatures(before), highlightQuery),
+                extensions: [
+                  const TableHtmlExtension(),
+                  ...spanDecorExtensions(),
+                ],
+                style:  {
+                  "mark": Style(
+                    backgroundColor: const Color(0xFFFFFF00),
+                    padding: HtmlPaddings.symmetric(horizontal: 2, vertical: 1),
+                  ),
+                  "p": Style(margin: Margins.zero),
+                  "h1": Style(fontSize: FontSize(26), fontWeight: FontWeight.w700),
+                  "h2": Style(fontSize: FontSize(18), fontWeight: FontWeight.w700),
+                  "td": Style(whiteSpace: WhiteSpace.pre),
+                },
+              ),
+            ),
+          ),
+        );
+      }
+    }
+
+    // 2) la tabla con scroll horizontal (solo la tabla)
+    final tableHtml = html.substring(m.start, m.end);
+    widgets.add(
+      Padding(
+        padding: const EdgeInsets.only(bottom: 10),
+        child: SelectionArea(
+          child: LayoutBuilder(
+            builder: (ctx, constraints) {
+              final minW = constraints.maxWidth; // evita "salto" de ancho
+              final table = Html(
+                data: highlightHtml(sanitizeFontFeatures(tableHtml), highlightQuery),
+                extensions: [
+                  const TableHtmlExtension(),
+                  ...spanDecorExtensions(),
+                ],
+                style:  {
+                  "mark": Style(
+                    backgroundColor: const Color(0xFFFFFF00),
+                    padding: HtmlPaddings.symmetric(horizontal: 2, vertical: 1),
+                  ),
+                  "table": Style(width: Width.auto(), margin: Margins.only(bottom: 0)),
+                  "th": Style(
+                    fontWeight: FontWeight.w700,
+                    padding: HtmlPaddings.all(6),
+                    backgroundColor: Color(0xFFEFEFEF),
+                    border: Border(
+                      top: BorderSide(width: 1, color: Color(0x33000000)),
+                      right: BorderSide(width: 1, color: Color(0x33000000)),
+                      bottom: BorderSide(width: 1, color: Color(0x33000000)),
+                      left: BorderSide(width: 1, color: Color(0x33000000)),
+                    ),
+                  ),
+                  "td": Style(
+                    padding: HtmlPaddings.all(6),
+                    border: Border(
+                      top: BorderSide(width: 1, color: Color(0x33000000)),
+                      right: BorderSide(width: 1, color: Color(0x33000000)),
+                      bottom: BorderSide(width: 1, color: Color(0x33000000)),
+                      left: BorderSide(width: 1, color: Color(0x33000000)),
+                    ),
+                    whiteSpace: WhiteSpace.pre,
+                  ),
+                },
+              );
+
+              return Scrollbar(
+                thumbVisibility: true,
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(minWidth: minW),
+                    child: table,
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+
+    last = m.end;
+  }
+
+  // 3) texto después de la última tabla
+  if (last < html.length) {
+    final after = html.substring(last).trim();
+    if (after.isNotEmpty) {
+      widgets.add(
+        Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: SelectionArea(
+            child: Html(
+              data: highlightHtml(sanitizeFontFeatures(after), highlightQuery),
+              extensions: [
+                const TableHtmlExtension(),
+                ...spanDecorExtensions(),
+              ],
+              style:  {
+                "mark": Style( // 👈 estilo para el resaltado
+                  backgroundColor: const Color(0xFFFFFF00),
+                  padding: HtmlPaddings.symmetric(horizontal: 2, vertical: 1),
+                ),
+                "p": Style(margin: Margins.only(bottom: 8)),
+                "td": Style(whiteSpace: WhiteSpace.pre),
+              },
+            ),
+          ),
+        ),
+      );
+    }
+  }
+
+  // Si no se encontró ninguna tabla, rinde el html entero normalmente
+  if (widgets.isEmpty) {
+    widgets.add(
+      Padding(
+        padding: const EdgeInsets.only(bottom: 10),
+        child: SelectionArea(
+          child: Html(
+            data: highlightHtml(sanitizeFontFeatures(html), highlightQuery),
+            extensions: [
+              const TableHtmlExtension(),
+              ...spanDecorExtensions(),
+            ],
+            style:  {
+              "mark": Style(
+                backgroundColor: const Color(0xFFFFFF00),
+                padding: HtmlPaddings.symmetric(horizontal: 2, vertical: 1),
+              ),
+              "table": Style(width: Width.auto()),
+              "td": Style(whiteSpace: WhiteSpace.pre),
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  return widgets;
+}
+
+/// ===== Extensión para <span data-border> y opcionalmente data-highlight =====
+/// - Si el <span> NO tiene atributos especiales, devolvemos **null** para usar el renderer nativo
+///   y así conservar `style="background-color: ..."` del HTML.
+/// ===== Extensión para <span data-border> y opcionalmente data-highlight =====
+/// - Si el <span> NO tiene atributos especiales, renderiza el span tal cual (conserva el style inline)
+List<HtmlExtension> spanDecorExtensions() => [
+  TagExtension(
+    tagsToExtend: const {'span'},
+    builder: (ext) {
+      final el = ext.element;
+      if (el == null) return const SizedBox.shrink();
+
+      final hasBorder    = el.attributes.containsKey('data-border');
+      final hasHighlight = el.attributes.containsKey('data-highlight');
+
+      // 👉 Si NO es "especial", renderiza el span tal cual (conserva el style inline)
+      if (!hasBorder && !hasHighlight) {
+        return Html(
+          data: el.outerHtml, // importante: outerHtml mantiene el <span> con sus estilos
+          extensions: const [TableHtmlExtension()],
+        );
+      }
+
+      // Caso especial (chip/borde/resaltado controlado por tus data-attrs)
+      final styleStr     = el.attributes['style'] ?? '';
+      final borderColor  = _parseCssColor(styleStr) ?? const Color(0xFF000000);
+      final borderWidth  = _parseBorderWidth(styleStr) ?? 1.0;
+      final bgColor      = hasHighlight ? _parseBackgroundColor(styleStr) : null;
+
+      return UnconstrainedBox(
+        alignment: Alignment.centerLeft,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: bgColor,
+            border: hasBorder ? Border.all(color: borderColor, width: borderWidth) : null,
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            child: Html(
+              data: el.innerHtml,
+              extensions: const [TableHtmlExtension()],
+              style: {
+                "p": Style(margin: Margins.zero),
+              },
+            ),
+          ),
+        ),
+      );
+    },
+  ),
+];
+
+/// ------- Parsers CSS simples -------
+double? _parseBorderWidth(String css) {
+  final m = RegExp(r'border-width\s*:\s*([0-9.]+)px', caseSensitive: false).firstMatch(css);
+  if (m != null) return double.tryParse(m.group(1)!);
+
+  final m2 = RegExp(r'border\s*:\s*([0-9.]+)px', caseSensitive: false).firstMatch(css);
+  if (m2 != null) return double.tryParse(m2.group(1)!);
+
+  return null;
+}
+
+Color? _parseCssColor(String css) {
+  final rgb = RegExp(r'rgb\((\d+),\s*(\d+),\s*(\d+)\)', caseSensitive: false).firstMatch(css);
+  if (rgb != null) {
+    return Color.fromARGB(
+      255,
+      int.parse(rgb.group(1)!),
+      int.parse(rgb.group(2)!),
+      int.parse(rgb.group(3)!),
+    );
+  }
+  final hex6 = RegExp(r'#([0-9a-fA-F]{6})').firstMatch(css);
+  if (hex6 != null) {
+    return Color(int.parse('FF${hex6.group(1)!}', radix: 16));
+  }
+  final hex3 = RegExp(r'#([0-9a-fA-F]{3})\b').firstMatch(css);
+  if (hex3 != null) {
+    final h = hex3.group(1)!;
+    final rr = h[0] + h[0];
+    final gg = h[1] + h[1];
+    final bb = h[2] + h[2];
+    return Color(int.parse('FF$rr$gg$bb', radix: 16));
+  }
+  return null;
+}
+
+Color? _parseBackgroundColor(String css) {
+  final bg = RegExp(r'background(?:-color)?\s*:\s*([^;]+);?', caseSensitive: false).firstMatch(css)?.group(1);
+  if (bg == null) return null;
+  final v = bg.trim();
+  final tmp = _parseCssColor('color:$v;'); // reutilizamos el parser de color
+  return tmp;
+}

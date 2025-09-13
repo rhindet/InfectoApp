@@ -4,42 +4,46 @@ import 'package:infecto_migrado/src/components/CounterCubit.dart';
 import 'package:infecto_migrado/src/components/BottomTabNavegator.dart';
 import 'package:infecto_migrado/src/components/ChangePageBloc.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
+import 'package:infecto_migrado/src/components/article_filter_cubit.dart';
+import 'package:infecto_migrado/src/components/article_search_cubit.dart';
+void main() async{
+  final widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+  FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
-void main() {
   await dotenv.load(fileName: ".env");
 
   runApp(const MyApp());
+  Future.delayed(const Duration(milliseconds: 3000), () {
+    FlutterNativeSplash.remove(); // quita la splash
+  });
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Infecto App',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.white70),
-        splashFactory: NoSplash.splashFactory, // esto desactiva animación tipo ripple (Animacion al dar click en elemento de TabBar)
-        splashColor: Colors.transparent,  // esto desactiva animación tipo ripple
-        highlightColor: Colors.transparent, //esto desactiva animación tipo ripple
+        splashFactory: NoSplash.splashFactory,
+        splashColor: Colors.transparent,
+        highlightColor: Colors.transparent,
         useMaterial3: true,
       ),
       home: MultiBlocProvider(
         providers: [
-          BlocProvider<CounterCubit>(
-            create: (_) => CounterCubit(),
-          ),
-          BlocProvider<ChangePageBloc>(
-            create: (_) => ChangePageBloc(),
-          ),
+          BlocProvider<CounterCubit>(create: (_) => CounterCubit()),
+          BlocProvider<ChangePageBloc>(create: (_) => ChangePageBloc()),
+          BlocProvider<ArticleSearchCubit>(create: (_) => ArticleSearchCubit()),
+          BlocProvider<ArticleFilterCubit>(create: (_) => ArticleFilterCubit()),
         ],
-        child:  MyHomePage(),
+        child: const MyHomePage(),
       ),
     );
   }
 }
-
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key});
 
