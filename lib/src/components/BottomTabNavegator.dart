@@ -20,7 +20,10 @@ class BottomTabNavegator extends StatefulWidget {
 class _BottomTabNavegatorState extends State<BottomTabNavegator> {
   late final PageController pageController;
   int _bottomNavIndex = 0;
-  final TextEditingController _searchCtl = TextEditingController(); // 👈
+  final TextEditingController _searchCtl = TextEditingController();
+
+  // Mantén sincronizado este número con la cantidad de children del PageView
+  static const int _totalPages = 9;
 
   @override
   void initState() {
@@ -31,7 +34,7 @@ class _BottomTabNavegatorState extends State<BottomTabNavegator> {
   @override
   void dispose() {
     pageController.dispose();
-    _searchCtl.dispose(); // 👈 importante
+    _searchCtl.dispose();
     super.dispose();
   }
 
@@ -40,8 +43,8 @@ class _BottomTabNavegatorState extends State<BottomTabNavegator> {
     return Container(
       child: BlocListener<ChangePageBloc, int>(
         listener: (context, state) {
-          // Limita el rango a las páginas que maneja el bottom nav (0..3)
-          if (state >= 0 && state <= 3) {
+          // ✅ permite navegar a cualquier página válida (0.._totalPages-1)
+          if (state >= 0 && state < _totalPages) {
             pageController.jumpToPage(state);
           }
         },
@@ -60,18 +63,20 @@ class _BottomTabNavegatorState extends State<BottomTabNavegator> {
                 children: [
                   const SizedBox(height: 5),
                   SearchBarCustomed(
-                    controller: _searchCtl, // 👈 pasa el controller
+                    controller: _searchCtl,
                     onTapped: () {},
+                    // si quieres evitar filtrar en vivo, puedes quitar onChanged
                     onChanged: (text) {
-
-                      // opcional: filtro local sobre la lista ya cargada
                       context.read<ArticleFilterCubit>().updateQuery(text);
-
-                      // NO llamar backend aquí
-                      context.read<ArticleSearchCubit>().setQuery(text);
+                      context.read<ArticleSearchCubit>().setQuery(text); // solo guarda el query
                     },
-                    onSubmitted: (text){
-                      context.read<ArticleSearchCubit>().search(text);
+                    onSubmitted: (text) {
+                      context.read<ArticleSearchCubit>().search(text);  // aquí sí busca
+                    },
+                    onClear: () {
+                      // limpiar estados al tocar la X
+                      context.read<ArticleFilterCubit>().updateQuery(''); // limpia filtro local
+                      context.read<ArticleSearchCubit>().clear();         // 👈 método nuevo (abajo)
                     },
                   ),
                   Expanded(
@@ -81,12 +86,12 @@ class _BottomTabNavegatorState extends State<BottomTabNavegator> {
                       children: [
                         const Center(child: Text("Calculadora")),
                         const InicioView(),
-                        Center(child: BaseAlignment(child:  GuiaView())),
-                        Center(
+                        Center(child: BaseAlignment(child: GuiaView())),
+                        const Center(
                           child: BaseAlignment(
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
-                              children: const [
+                              children: [
                                 Text(
                                   'Esquema Nacional de Vacunación',
                                   style: TextStyle(
@@ -95,7 +100,6 @@ class _BottomTabNavegatorState extends State<BottomTabNavegator> {
                                   ),
                                 ),
                                 SizedBox(height: 10),
-                                // Asegúrate de tener este asset en pubspec.yaml
                                 Image(
                                   image: AssetImage('assets/vacunacion.jpg'),
                                   width: 500,
@@ -107,7 +111,7 @@ class _BottomTabNavegatorState extends State<BottomTabNavegator> {
                           ),
                         ),
                         const Center(child: Text("Contacto")),
-                        // const Center(child: ContactoView()),
+                        // Center(child: ContactoView()),
                         const Center(child: Text("Cómo llegar")),
                         const Center(child: Text("Términos y condiciones")),
                         const Center(child: Text("Acerca de")),
@@ -117,7 +121,6 @@ class _BottomTabNavegatorState extends State<BottomTabNavegator> {
                   ),
                 ],
               ),
-              // 👉 clave: si hay teclado, no hay bottomNavigationBar
               bottomNavigationBar: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 900),
                 switchInCurve: Curves.easeIn,
@@ -128,13 +131,12 @@ class _BottomTabNavegatorState extends State<BottomTabNavegator> {
                   builder: (context, isKeyboardVisible) {
                     return AnimatedSwitcher(
                       duration: isKeyboardVisible
-                          ? Duration.zero // ocultar: sin animación
-                          : const Duration(milliseconds: 600), // mostrar: fade-in
+                          ? Duration.zero
+                          : const Duration(milliseconds: 600),
                       switchInCurve: Curves.easeIn,
                       switchOutCurve: Curves.easeOut,
                       transitionBuilder: (child, animation) =>
                           FadeTransition(opacity: animation, child: child),
-                      // 🔧 Evita AnimatedSize durante layout (no animar tamaño)
                       layoutBuilder: (Widget? currentChild, List<Widget> previousChildren) {
                         return currentChild ?? const SizedBox.shrink();
                       },
@@ -143,9 +145,7 @@ class _BottomTabNavegatorState extends State<BottomTabNavegator> {
                           : _BottomBar(
                         key: const ValueKey('shown'),
                         currentIndex: currentIndexForBottomNav,
-                        onTap: (i) => context
-                            .read<ChangePageBloc>()
-                            .add(CambiarPagina(i)),
+                        onTap: (i) => context.read<ChangePageBloc>().add(CambiarPagina(i)),
                         buildTabIcon: _buildTabIcon,
                       ),
                     );
@@ -159,7 +159,6 @@ class _BottomTabNavegatorState extends State<BottomTabNavegator> {
     );
   }
 
-  /// Widget auxiliar para construir íconos con barra amarilla arriba si está seleccionado
   Widget _buildTabIcon(bool isSelected, IconData icon) {
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -171,7 +170,7 @@ class _BottomTabNavegatorState extends State<BottomTabNavegator> {
           width: isSelected ? 24 : 0,
           decoration: BoxDecoration(
             color: isSelected ? Colors.amber : Colors.transparent,
-            borderRadius: BorderRadius.circular(10), // Esquinas redondeadas
+            borderRadius: BorderRadius.circular(10),
           ),
         ),
         const SizedBox(height: 10),
@@ -181,14 +180,13 @@ class _BottomTabNavegatorState extends State<BottomTabNavegator> {
   }
 }
 
-// Extrae la barra a un widget para que Offstage no recalculé todo
 class _BottomBar extends StatelessWidget {
   final int currentIndex;
   final void Function(int) onTap;
   final Widget Function(bool, IconData) buildTabIcon;
 
   const _BottomBar({
-    super.key, // ← conserva la key para AnimatedSwitcher
+    super.key,
     required this.currentIndex,
     required this.onTap,
     required this.buildTabIcon,

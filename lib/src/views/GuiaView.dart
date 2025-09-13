@@ -161,7 +161,7 @@ class GuiaSectionCubit extends Cubit<GuiaState> {
         key0: state.key0!, title0: state.title0!,
         key1: state.key1!, title1: state.title1!,
         key2: state.key2!, title2: state.title2!,
-        key3: key3,        title3: state.title3!,
+        key3: key3,        title3: title3, // ✅ FIX: pasar el argumento, no state.title3!
       ));
 
   /// Nuevo: abrir detalle de artículo (nivel 5)
@@ -222,13 +222,13 @@ class GuiaRow {
   final String id;
   final String label;
   final IconData icon;
-  final bool isArticle; // 👈 nuevo
+  final bool isArticle;
 
   const GuiaRow({
     required this.id,
     required this.label,
     required this.icon,
-    required this.isArticle, // 👈 nuevo
+    required this.isArticle,
   });
 }
 
@@ -250,9 +250,7 @@ class GuiaView extends StatelessWidget {
   }
 
   Future<List<GuiaRow>> _loadRows(GuiaState s) async {
-    print("Entro");
     if (s.level == 0) {
-      print("Entro");
       final l0 = await AppDeps.I.articleRepository.getAllNivel0();
       return l0.map((e) {
         final label = e.nombre ?? 'Sin nombre';
@@ -325,7 +323,7 @@ class GuiaView extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => GuiaSectionCubit(),
-      child: WillPopScope( // 👈 añadido: intercepta back físico
+      child: WillPopScope(
         onWillPop: () async {
           final s = context.read<GuiaSectionCubit>().state;
           if (s.showArticleDetail || s.level > 0) {
@@ -345,7 +343,6 @@ class GuiaView extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: BlocBuilder<GuiaSectionCubit, GuiaState>(
                     builder: (context, s) {
-                      // 👇 Ajuste: muestra atrás si estás en artículo aunque level==0
                       final isRootNoArticle = (s.level == 0) && !s.showArticleDetail;
 
                       if (isRootNoArticle) {
@@ -523,8 +520,7 @@ class GuiaView extends StatelessWidget {
                                               cubit.openLevel4(key3: r.id, title3: r.label);
                                               break;
                                             case 4:
-                                            // Si llegas aquí con categoría (r.isArticle == false), podrías decidir:
-                                            // - abrir otro nivel (si existiera), o ignorar.
+                                            // si existiera más nivel, acá
                                               break;
                                           }
                                         },
@@ -576,47 +572,21 @@ class _ArticleDetail extends StatelessWidget {
           return const Center(child: Text('No se pudo cargar el artículo'));
         }
 
+        final query = context.read<ArticleSearchCubit>().state.query;
+
         return ListView(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
           children: [
-            // Tema
-            //Text(
-            //a.tema ?? 'Sin tema',
-            // style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-            // ),
-            // const SizedBox(height: 12),
-
-            // Subtemas
-            if ((a.subtemas).isNotEmpty) ...[
-              //const Text('Subtemas', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
-              //const SizedBox(height: 8),
-              // Wrap(
-              //  spacing: 8,
-              //  runSpacing: -8,
-              //  children: a.subtemas.map((s) => Chip(label: Text(s))).toList(),
-              //  ),
-              // const SizedBox(height: 16),
-            ],
-
-            // Contenidos
             if ((a.contenidos).isNotEmpty) ...[
-              //const Text('Contenido', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
               const SizedBox(height: 8),
-
-              // 👇 Solo las tablas tienen scroll horizontal
               ...a.contenidos
                   .cast<String>()
-                  .expand((c) => _buildHtmlSegments(
-                c,
-                context,
-                context.read<ArticleSearchCubit>().state.query, // 👈 pasa el query actual
-              ))
+                  .expand((c) => _buildHtmlSegments(c, context, query))
                   .toList(),
             ],
 
             const SizedBox(height: 20),
 
-            // Metadatos opcionales
             if (a.fechaCreacion != null || a.fechaModificacion != null)
               Text(
                 'Actualizado: ${a.fechaModificacion ?? a.fechaCreacion}',
@@ -701,7 +671,6 @@ List<Widget> _buildHtmlSegments(String html, BuildContext context, String highli
   int last = 0;
 
   for (final m in _tableRx.allMatches(html)) {
-    // 1) texto antes de la tabla
     if (m.start > last) {
       final before = html.substring(last, m.start).trim();
       if (before.isNotEmpty) {
@@ -732,7 +701,6 @@ List<Widget> _buildHtmlSegments(String html, BuildContext context, String highli
       }
     }
 
-    // 2) la tabla con scroll horizontal (solo la tabla)
     final tableHtml = html.substring(m.start, m.end);
     widgets.add(
       Padding(
@@ -740,7 +708,7 @@ List<Widget> _buildHtmlSegments(String html, BuildContext context, String highli
         child: SelectionArea(
           child: LayoutBuilder(
             builder: (ctx, constraints) {
-              final minW = constraints.maxWidth; // evita "salto" de ancho
+              final minW = constraints.maxWidth;
               final table = Html(
                 data: highlightHtml(sanitizeFontFeatures(tableHtml), highlightQuery),
                 extensions: [
@@ -756,8 +724,8 @@ List<Widget> _buildHtmlSegments(String html, BuildContext context, String highli
                   "th": Style(
                     fontWeight: FontWeight.w700,
                     padding: HtmlPaddings.all(6),
-                    backgroundColor: Color(0xFFEFEFEF),
-                    border: Border(
+                    backgroundColor: const Color(0xFFEFEFEF),
+                    border: const Border(
                       top: BorderSide(width: 1, color: Color(0x33000000)),
                       right: BorderSide(width: 1, color: Color(0x33000000)),
                       bottom: BorderSide(width: 1, color: Color(0x33000000)),
@@ -766,7 +734,7 @@ List<Widget> _buildHtmlSegments(String html, BuildContext context, String highli
                   ),
                   "td": Style(
                     padding: HtmlPaddings.all(6),
-                    border: Border(
+                    border: const Border(
                       top: BorderSide(width: 1, color: Color(0x33000000)),
                       right: BorderSide(width: 1, color: Color(0x33000000)),
                       bottom: BorderSide(width: 1, color: Color(0x33000000)),
@@ -796,7 +764,6 @@ List<Widget> _buildHtmlSegments(String html, BuildContext context, String highli
     last = m.end;
   }
 
-  // 3) texto después de la última tabla
   if (last < html.length) {
     final after = html.substring(last).trim();
     if (after.isNotEmpty) {
@@ -811,7 +778,7 @@ List<Widget> _buildHtmlSegments(String html, BuildContext context, String highli
                 ...spanDecorExtensions(),
               ],
               style:  {
-                "mark": Style( // 👈 estilo para el resaltado
+                "mark": Style(
                   backgroundColor: const Color(0xFFFFFF00),
                   padding: HtmlPaddings.symmetric(horizontal: 2, vertical: 1),
                 ),
@@ -825,7 +792,6 @@ List<Widget> _buildHtmlSegments(String html, BuildContext context, String highli
     }
   }
 
-  // Si no se encontró ninguna tabla, rinde el html entero normalmente
   if (widgets.isEmpty) {
     widgets.add(
       Padding(
@@ -853,11 +819,8 @@ List<Widget> _buildHtmlSegments(String html, BuildContext context, String highli
 
   return widgets;
 }
+
 /// ===== Extensión para <span data-border> y opcionalmente data-highlight =====
-/// - Si el <span> NO tiene atributos especiales, devolvemos **null** para usar el renderer nativo
-///   y así conservar `style="background-color: ..."` del HTML.
-/// ===== Extensión para <span data-border> y opcionalmente data-highlight =====
-/// - Si el <span> NO tiene atributos especiales, renderiza el span tal cual (conserva el style inline)
 List<HtmlExtension> spanDecorExtensions() => [
   TagExtension(
     tagsToExtend: const {'span'},
@@ -868,15 +831,13 @@ List<HtmlExtension> spanDecorExtensions() => [
       final hasBorder    = el.attributes.containsKey('data-border');
       final hasHighlight = el.attributes.containsKey('data-highlight');
 
-      // 👉 Si NO es "especial", renderiza el span tal cual (conserva el style inline)
       if (!hasBorder && !hasHighlight) {
         return Html(
-          data: el.outerHtml, // importante: outerHtml mantiene el <span> con sus estilos
+          data: el.outerHtml,
           extensions: const [TableHtmlExtension()],
         );
       }
 
-      // Caso especial (chip/borde/resaltado controlado por tus data-attrs)
       final styleStr     = el.attributes['style'] ?? '';
       final borderColor  = _parseCssColor(styleStr) ?? const Color(0xFF000000);
       final borderWidth  = _parseBorderWidth(styleStr) ?? 1.0;
@@ -906,7 +867,6 @@ List<HtmlExtension> spanDecorExtensions() => [
   ),
 ];
 
-/// ------- Parsers CSS simples -------
 double? _parseBorderWidth(String css) {
   final m = RegExp(r'border-width\s*:\s*([0-9.]+)px', caseSensitive: false).firstMatch(css);
   if (m != null) return double.tryParse(m.group(1)!);
@@ -946,6 +906,6 @@ Color? _parseBackgroundColor(String css) {
   final bg = RegExp(r'background(?:-color)?\s*:\s*([^;]+);?', caseSensitive: false).firstMatch(css)?.group(1);
   if (bg == null) return null;
   final v = bg.trim();
-  final tmp = _parseCssColor('color:$v;'); // reutilizamos el parser de color
+  final tmp = _parseCssColor('color:$v;');
   return tmp;
 }

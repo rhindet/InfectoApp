@@ -69,6 +69,14 @@ class ArticleSearchCubit extends Cubit<ArticleSearchState> {
       emit(state.copyWith(loading: false, error: e.toString(), results: const []));
     }
   }
+  void clear() {
+    // deja todo limpio para que GuiaView NO entre al modo "resultados"
+    emit(state.copyWith(
+      query: '',
+      loading: false,
+      error: null,
+      results: const [],
+    ));
+  }
 
-  void clear() => emit(const ArticleSearchState());
 }

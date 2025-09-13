@@ -7,6 +7,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:infecto_migrado/src/components/article_filter_cubit.dart';
 import 'package:infecto_migrado/src/components/article_search_cubit.dart';
+
 void main() async{
   final widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
@@ -44,6 +45,7 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key});
 
@@ -57,43 +59,40 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Container(
-          //color: Colors.green ,
-          child: Column(
-              children: [
-                Row(
-                  spacing: 40,
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    IconButton(
-                      iconSize: 30,
-                      icon: Icon(Icons.menu),
-                      onPressed: (){
-                        showSideModal(context);
-                      },
-                    ),
-                    Image.asset(
-                      'assets/infecto_logo_sin_fondo.png',
-                      width: 120,
-                      height: 40,
-                    ),
-                    IconButton(
-                      iconSize: 30,
-                      icon: Icon(Icons.dark_mode),
-                      onPressed: (){
-                      },
-                    ),
-
-                  ],
-                ),
-
-              ],
-        )
-        )
-
+          title: Container(
+              child: Column(
+                children: [
+                  Row(
+                    spacing: 40,
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      IconButton(
+                        iconSize: 30,
+                        icon: const Icon(Icons.menu),
+                        onPressed: (){
+                          showSideModal(context);
+                        },
+                      ),
+                      Image.asset(
+                        'assets/infecto_logo_sin_fondo.png',
+                        width: 120,
+                        height: 40,
+                      ),
+                      IconButton(
+                        iconSize: 30,
+                        icon: const Icon(Icons.dark_mode),
+                        onPressed: (){
+                          // TODO: toggle tema
+                        },
+                      ),
+                    ],
+                  ),
+                ],
+              )
+          )
       ),
-      body: BottomTabNavegator(),
+      body: const BottomTabNavegator(),
     );
   }
 
@@ -127,22 +126,22 @@ class _MyHomePageState extends State<MyHomePage> {
                       ),
                       Expanded(
                           child: Padding(
-                              padding: EdgeInsets.symmetric(vertical: 40,horizontal: 10),
+                            padding: const EdgeInsets.symmetric(vertical: 40,horizontal: 10),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start ,
                               children: [
                                 Padding(
-                                  padding: EdgeInsets.symmetric(vertical: 10),
+                                  padding: const EdgeInsets.symmetric(vertical: 10),
                                   child: TextButton(
                                     onPressed: () {
                                       Navigator.of(innerContext).pop();
                                       outerContext.read<ChangePageBloc>().add(CambiarPagina(4)); // ir a Contacto
                                     },
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,  // evita que el botón se expanda
-                                      children: const [
+                                    child: const Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
                                         Icon(Icons.phone_android, color: Colors.white),
-                                        SizedBox(width: 8), // espacio entre icono y texto
+                                        SizedBox(width: 8),
                                         Text(
                                           "Contacto",
                                           style: TextStyle(
@@ -155,77 +154,77 @@ class _MyHomePageState extends State<MyHomePage> {
                                   ),
                                 ),
                                 Padding(
-                                  padding: EdgeInsets.symmetric(vertical: 10),
-                                        child:TextButton(
-                                          onPressed: () {
-                                            Navigator.of(innerContext).pop();
-                                            outerContext.read<ChangePageBloc>().add(CambiarPagina(5)); // ir a Contacto
-                                          },
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min, // evita que el botón se expanda
-                                            children: const [
-                                              Icon(Icons.map, color: Colors.white),
-                                              SizedBox(width: 8), // espacio entre icono y texto
-                                              Text(
-                                                "Como llegar?",
-                                                style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                            ],
+                                  padding: const EdgeInsets.symmetric(vertical: 10),
+                                  child: TextButton(
+                                    onPressed: () {
+                                      Navigator.of(innerContext).pop();
+                                      outerContext.read<ChangePageBloc>().add(CambiarPagina(5));
+                                    },
+                                    child: const Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(Icons.map, color: Colors.white),
+                                        SizedBox(width: 8),
+                                        Text(
+                                          "Como llegar?",
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
                                           ),
                                         ),
+                                      ],
+                                    ),
+                                  ),
                                 ),
                                 Padding(
-                                  padding: EdgeInsets.symmetric(vertical: 10),
-                                        child:TextButton(
-                                          onPressed: () {
-                                            Navigator.of(innerContext).pop();
-                                            outerContext.read<ChangePageBloc>().add(CambiarPagina(6)); // ir a Contacto
-                                          },
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min, // evita que el botón se expanda
-                                            children: const [
-                                              Icon(Icons.edit_note, color: Colors.white,size: 25,),
-                                              SizedBox(width: 8), // espacio entre icono y texto
-                                              Text(
-                                                "Terminos & \n Condiciones",
-                                                style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                            ],
+                                  padding: const EdgeInsets.symmetric(vertical: 10),
+                                  child: TextButton(
+                                    onPressed: () {
+                                      Navigator.of(innerContext).pop();
+                                      outerContext.read<ChangePageBloc>().add(CambiarPagina(6));
+                                    },
+                                    child: const Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(Icons.edit_note, color: Colors.white,size: 25,),
+                                        SizedBox(width: 8),
+                                        Text(
+                                          "Terminos & \n Condiciones",
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
                                           ),
                                         ),
+                                      ],
+                                    ),
+                                  ),
                                 ),
                                 Padding(
-                                  padding: EdgeInsets.symmetric(vertical: 10),
-                                        child:TextButton(
-                                          onPressed: () {
-                                            Navigator.of(innerContext).pop();
-                                            outerContext.read<ChangePageBloc>().add(CambiarPagina(7)); // Acerca de
-                                          },
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min, // evita que el botón se expanda
-                                            children: const [
-                                              Icon(Icons.info_outline, color: Colors.white),
-                                              SizedBox(width: 8), // espacio entre icono y texto
-                                              Text(
-                                                "Acerca de",
-                                                style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                            ],
+                                  padding: const EdgeInsets.symmetric(vertical: 10),
+                                  child: TextButton(
+                                    onPressed: () {
+                                      Navigator.of(innerContext).pop();
+                                      outerContext.read<ChangePageBloc>().add(CambiarPagina(7));
+                                    },
+                                    child: const Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(Icons.info_outline, color: Colors.white),
+                                        SizedBox(width: 8),
+                                        Text(
+                                          "Acerca de",
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
                                           ),
-                                        ) ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
                               ],
                             ),
                           )
-
                       ),
                     ],
                   ),
@@ -249,5 +248,4 @@ class _MyHomePageState extends State<MyHomePage> {
       },
     );
   }
-
 }

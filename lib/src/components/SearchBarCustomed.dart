@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 class SearchBarCustomed extends StatelessWidget {
   final TextEditingController? controller;
   final ValueChanged<String>? onChanged;
-  final VoidCallback? onTapped;
   final ValueChanged<String>? onSubmitted;
+  final VoidCallback? onTapped;
+  final VoidCallback? onClear;   // 👈 NUEVO
   final String hint;
 
   const SearchBarCustomed({
@@ -12,8 +13,9 @@ class SearchBarCustomed extends StatelessWidget {
     this.controller,
     this.onChanged,
     this.onSubmitted,
-    this.hint = 'Buscar',
     this.onTapped,
+    this.onClear,                // 👈 NUEVO
+    this.hint = 'Buscar',
   });
 
   @override
@@ -22,9 +24,7 @@ class SearchBarCustomed extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 30),
       decoration: BoxDecoration(
-        color: theme.brightness == Brightness.dark
-            ? const Color(0xFF1E1E1E)
-            : Colors.white,
+        color: theme.brightness == Brightness.dark ? const Color(0xFF1E1E1E) : Colors.white,
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
@@ -34,35 +34,34 @@ class SearchBarCustomed extends StatelessWidget {
           ),
         ],
       ),
-      child: TextField(
+      child: TextField
+        (
         controller: controller,
-        onChanged: onChanged,
-        onSubmitted: onSubmitted,
+        onChanged: onChanged,      // si no quieres filtrar en vivo, pásalo null
+        onSubmitted: onSubmitted,  // dispara la búsqueda aquí
         onTap: onTapped,
         textInputAction: TextInputAction.search,
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle: TextStyle(
-            color: Colors.grey.shade400,
-            fontSize: 16,
-          ),
+          hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 16),
           prefixIcon: Icon(Icons.search, color: Colors.grey.shade400),
           border: InputBorder.none,
-          contentPadding:
-          const EdgeInsets.symmetric(horizontal: 4, vertical: 14),
-          // 👇 Botón "X" para limpiar texto
+          contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 14),
+          // 👇 Botón de X que NO llama onChanged('') para evitar re-filtrar
           suffixIcon: controller != null
               ? ValueListenableBuilder<TextEditingValue>(
             valueListenable: controller!,
             builder: (context, value, child) {
-              if (value.text.isEmpty) {
-                return const SizedBox.shrink();
-              }
+              if (value.text.isEmpty) return const SizedBox.shrink();
               return IconButton(
                 icon: const Icon(Icons.clear, color: Colors.grey),
                 onPressed: () {
+                  // 1) limpiar texto
                   controller!.clear();
-                  if (onChanged != null) onChanged!('');
+                  // 2) accionar limpieza de resultados
+                  if (onClear != null) onClear!();
+                  // 3) opcional: ocultar teclado
+                  // FocusScope.of(context).unfocus();
                 },
               );
             },
