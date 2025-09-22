@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:infecto_migrado/src/components/table_vacunacion.dart';
 import 'InicioView.dart';
 import 'ContactoView.dart';
 import 'ChangePageBloc.dart';
@@ -7,8 +8,11 @@ import '../views/GuiaView.dart';
 import 'BaseAlignment.dart';
 import 'SearchBarCustomed.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
+import 'about.us.dart';
 import 'article_filter_cubit.dart';
 import 'article_search_cubit.dart';
+import 'contact.us.dart';
+import 'find.us.dart';
 
 class BottomTabNavegator extends StatefulWidget {
   const BottomTabNavegator({super.key});
@@ -83,37 +87,15 @@ class _BottomTabNavegatorState extends State<BottomTabNavegator> {
                       controller: pageController,
                       physics: const NeverScrollableScrollPhysics(),
                       children: [
-                        const Center(child: Text("Calculadora")),
-                        const InicioView(),
                         Center(child: BaseAlignment(child: GuiaView())),
-                        const Center(
-                          child: BaseAlignment(
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  'Esquema Nacional de Vacunación',
-                                  style: TextStyle(
-                                    fontSize: 17,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                SizedBox(height: 10),
-                                Image(
-                                  image: AssetImage('assets/vacunacion.jpg'),
-                                  width: 500,
-                                  height: 500,
-                                  fit: BoxFit.contain,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const Center(child: Text("Contacto")),
+                        BaseAlignment(child: InicioView()),
+                        const Center(child: Text("Calculadora")),
+                        Center(child: BaseAlignment(child: TableVacunacion())),
+                        BaseAlignment(child: ContactCard()),
                         // Center(child: ContactoView()),
-                        const Center(child: Text("Cómo llegar")),
+                        BaseAlignment(child: FindUsPage()),
                         const Center(child: Text("Términos y condiciones")),
-                        const Center(child: Text("Acerca de")),
+                        BaseAlignment(child: AboutSection()),
                         const Center(child: Text("<Farmacos>")),
                       ],
                     ),
@@ -205,16 +187,16 @@ class _BottomBar extends StatelessWidget {
       showUnselectedLabels: true,
       items: [
         BottomNavigationBarItem(
-          icon: buildTabIcon(currentIndex == 0, Icons.calculate_outlined),
-          label: 'Calculadora',
+          icon: buildTabIcon(currentIndex == 0, Icons.inventory_sharp),
+          label: 'Guía',
         ),
         BottomNavigationBarItem(
           icon: buildTabIcon(currentIndex == 1, Icons.home),
           label: 'Inicio',
         ),
         BottomNavigationBarItem(
-          icon: buildTabIcon(currentIndex == 2, Icons.inventory_sharp),
-          label: 'Guía',
+          icon: buildTabIcon(currentIndex == 2, Icons.calculate_outlined),
+          label: 'Calculadora',
         ),
         BottomNavigationBarItem(
           icon: buildTabIcon(currentIndex == 3, Icons.vaccines),
