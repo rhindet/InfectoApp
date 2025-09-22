@@ -29,18 +29,26 @@ class ContactCard extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(20, 18, 20, 16),
               color: primarySoft,
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Icon(Icons.support_agent, color: primary),
                   const SizedBox(width: 10),
-                  Text(
-                    'Contáctanos',
-                    style: text.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      color: primary,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Contáctanos',
+                          style: text.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w800,
+                            color: primary,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        const _Pill(text: 'Lun–Dom · 8:00–18:00'),
+                      ],
                     ),
                   ),
-                  const Spacer(),
-                  _Pill(text: 'Lun–Dom · 8:00–18:00'),
                 ],
               ),
             ),
@@ -55,11 +63,16 @@ class ContactCard extends StatelessWidget {
                     title: 'Laboratorio',
                     subtitle: '8389 1111 ext. 2727 · 81 1006 1414',
                     onTap: () => _call('8110061414'),
-                    trailing: _QuickAction(
-                      label: 'Llamar',
-                      icon: Icons.phone,
-                      onTap: () => _call('8110061414'),
-                    ),
+                    trailing: Column(
+                      children: [
+
+                        _QuickAction(
+                          label: 'Llamar',
+                          icon: Icons.phone,
+                          onTap: () => _call('8110061414'),
+                        ),
+                      ],
+                    )
                   ),
                   const Divider(height: 20),
                   _ContactRow(
@@ -190,8 +203,11 @@ class _ContactRow extends StatelessWidget {
               ],
             ),
           ),
-          if (trailing != null) trailing!,
-        ],
+          if (trailing != null)
+            Padding(
+              padding: const EdgeInsets.only(left: 10), // 🔹 espacio entre texto y botón
+              child: trailing,
+            ),        ],
       ),
     );
   }
@@ -209,12 +225,17 @@ class _QuickAction extends StatelessWidget {
       onPressed: onTap,
       style: TextButton.styleFrom(
         foregroundColor: ContactCard.primary,
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6), // 👈 menos padding
+        minimumSize: const Size(0, 36), // 👈 altura mínima segura
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap, // 👈 evita espacio extra
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         backgroundColor: ContactCard.primarySoft,
       ),
-      icon: Icon(icon, size: 18),
-      label: Text(label),
+      icon: Icon(icon, size: 16), // 👈 ícono un poco más chico
+      label: Text(
+        label,
+        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+      ),
     );
   }
 }
@@ -295,7 +316,6 @@ extension _IconBox on Widget {
     );
   }
 }
-
 
 class _Pill extends StatelessWidget {
   final String text;
