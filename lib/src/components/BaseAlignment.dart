@@ -14,7 +14,7 @@ class _BaseAlignmentState extends State<BaseAlignment> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.all(20),
+      padding: EdgeInsets.only(top:20,right: 20,left: 20),
       child: widget.child,
     );
   }

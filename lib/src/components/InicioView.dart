@@ -23,10 +23,9 @@ class _InicioViewState extends State<InicioView> {
             //_buildQuickLinksRect(),            // Rectangulares outlined (2 columnas)
            // _buildQuickLinksRectFilled(),      // Rectangulares filled azul (2 columnas)
            // _buildQuickLinksExtended(),        // Rectangulares extendidos con descripción
-            const SizedBox(height: 10),
-
+             SizedBox(height: 10),
             _buildTitulo(),
-            const SizedBox(height: 10),
+             SizedBox(height: 10),
             _buildCardBase(),
           ],
         ),
@@ -40,7 +39,7 @@ class _InicioViewState extends State<InicioView> {
       alignment: Alignment.topLeft,
       margin: const EdgeInsets.only(left: 5, top: 8),
       child: const Text(
-        "Articulos Populares",
+        "Información Importante",
         style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
       ),
     );
@@ -50,11 +49,12 @@ class _InicioViewState extends State<InicioView> {
     // Ejemplo de artículos (puedes traer estos datos de tu backend)
     final articles = <PopularArticle>[
       const PopularArticle(
-        imageAsset: 'assets/card.jpeg',
+        imageAsset: 'assets/imgane_vih2.png',
         tag: 'Artículo',
-        title: 'Advances in Cancer Immunotherapy',
-        author: 'Dr. Smith',
-        date: '04-08-2025',
+        title: 'Guía de manejo antirretroviral de las personas con VIH ',
+        author: 'Centro Nacional para la Prevención y el Control del VIH/Sida y Hepatitis (Censida)',
+        date: '2025',
+        url: 'https://www.gob.mx/cms/uploads/attachment/file/1006720/Guia_de_manejo_antirretroviral_de_las_personas_con_VIH_2025.pdf'
       ),
       const PopularArticle(
         imageAsset: 'assets/card.jpeg',
@@ -62,6 +62,7 @@ class _InicioViewState extends State<InicioView> {
         title: 'New Hypertension Guidelines 2025',
         author: 'Dra. Pérez',
         date: '18-07-2025',
+        url: ''
       ),
       const PopularArticle(
         imageAsset: 'assets/card.jpeg',
@@ -69,6 +70,7 @@ class _InicioViewState extends State<InicioView> {
         title: 'Diabetes Mellitus Type 2: Update',
         author: 'Dr. Gómez',
         date: '30-06-2025',
+        url: ''
       ),
     ];
 
@@ -96,12 +98,12 @@ class _InicioViewState extends State<InicioView> {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             children: const [
-              _QuickLinkTile(label: "Medicina", icon: Icons.medical_services_outlined, onTap: _noop),
-              _QuickLinkTile(label: "Calculadora", icon: Icons.calculate_outlined, onTap: _noop),
-              _QuickLinkTile(label: "Citas", icon: Icons.event_outlined, onTap: _noop),
-              _QuickLinkTile(label: "Mapa", icon: Icons.map_outlined, onTap: _noop),
-              _QuickLinkTile(label: "Fármacos", icon: Icons.science_outlined, onTap: _noop),
-              _QuickLinkTile(label: "Guías", icon: Icons.menu_book_outlined, onTap: _noop),
+              _QuickLinkTile(label: "Fármacos", icon: Icons.medical_services_outlined, onTap: _noop),
+              _QuickLinkTile(label: "Patógenos", icon: Icons.calculate_outlined, onTap: _noop),
+              _QuickLinkTile(label: "Vacunas", icon: Icons.event_outlined, onTap: _noop),
+              _QuickLinkTile(label: "Sindromes", icon: Icons.map_outlined, onTap: _noop),
+              _QuickLinkTile(label: "Prevencion y control", icon: Icons.science_outlined, onTap: _noop),
+              //_QuickLinkTile(label: "Guías", icon: Icons.menu_book_outlined, onTap: _noop),
             ],
           ),
         ),
@@ -130,12 +132,12 @@ class _InicioViewState extends State<InicioView> {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             children: const [
-              _QuickLinkTileAlt(label: "Medicina", icon: Icons.medication_outlined, onTap: _noop),
-              _QuickLinkTileAlt(label: "Calculadora", icon: Icons.functions_outlined, onTap: _noop),
-              _QuickLinkTileAlt(label: "Resultados", icon: Icons.description_outlined, onTap: _noop),
-              _QuickLinkTileAlt(label: "Contacto", icon: Icons.support_agent_outlined, onTap: _noop),
-              _QuickLinkTileAlt(label: "Guías", icon: Icons.menu_book_outlined, onTap: _noop),
-              _QuickLinkTileAlt(label: "Farmacología", icon: Icons.science_outlined, onTap: _noop),
+              _QuickLinkTileAlt(label: "Fármacos", icon: Icons.medication_outlined, onTap: _noop),
+              _QuickLinkTileAlt(label: "Patógeos", icon: Icons.functions_outlined, onTap: _noop),
+              _QuickLinkTileAlt(label: "Vacunas", icon: Icons.description_outlined, onTap: _noop),
+              _QuickLinkTileAlt(label: "Síndromes", icon: Icons.support_agent_outlined, onTap: _noop),
+              _QuickLinkTileAlt(label: "Prevencion y control", icon: Icons.menu_book_outlined, onTap: _noop),
+             // _QuickLinkTileAlt(label: "Farmacología", icon: Icons.science_outlined, onTap: _noop),
             ],
           ),
         ),

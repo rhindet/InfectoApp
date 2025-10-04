@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 class FindUsPage extends StatelessWidget {
   const FindUsPage({super.key});
 
+  final String imageAsset = "assets/edificio.png";
+
+
   @override
   Widget build(BuildContext context) {
     const Color primary = Color(0xFF1C3D8C); // azul corporativo
@@ -38,7 +41,7 @@ class FindUsPage extends StatelessWidget {
           builder: (context, constraints) {
             final isWide = constraints.maxWidth >= 900; // cambia a 900/800 a tu gusto
 
-            final left = _HospitalImage();
+            final left =_ImageCard(imageAsset: imageAsset);
             final right = _InfoPanel(
               primary: primary,
               lightPanel: lightPanel,
@@ -222,4 +225,52 @@ class _CurvedBottomClipper extends CustomClipper<Path> {
 
   @override
   bool shouldReclip(_CurvedBottomClipper oldClipper) => false;
+}
+
+class _ImageCard extends StatelessWidget {
+  const _ImageCard({this.imageAsset = "assets/edificio.png"});
+
+  final String imageAsset;
+
+  @override
+  Widget build(BuildContext context) {
+    final bool isMobile = MediaQuery.of(context).size.width < 720;
+
+    return Center(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: isMobile ? 160 : 220, // 👈 controla el tamaño
+          ),
+          child: AspectRatio(
+            aspectRatio: 1, // mantiene forma cuadrada
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                Image.asset(
+                  imageAsset,
+                  fit: BoxFit.cover,
+                ),
+                Positioned.fill(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.transparent,
+                          Colors.transparent,
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }

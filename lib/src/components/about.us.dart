@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 class AboutSection extends StatelessWidget {
   const AboutSection({
     super.key,
-    this.imageAsset = "assets/edificio.png",
+    this.imageAsset = "assets/about_us.jpeg",
   });
 
   final String imageAsset;
@@ -116,10 +116,17 @@ class _TextBlock extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = Theme.of(context).textTheme;
 
+    final valores = const [
+      "Ética",
+      "Espíritu de Servicio",
+      "Honestidad",
+      "Responsabilidad",
+      "Respeto a la vida",
+    ];
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-
         const SizedBox(height: 10),
         // Párrafo
         Text(
@@ -142,25 +149,49 @@ class _TextBlock extends StatelessWidget {
             color: headline,
           ),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 12),
 
-        // Chips de valores (responsivos, hacen wrap)
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: const [
-            _ValueChip(label: "Ética"),
-            _ValueChip(label: "Espíritu de Servicio"),
-            _ValueChip(label: "Honestidad"),
-            _ValueChip(label: "Responsabilidad"),
-            _ValueChip(label: "Respeto a la vida"),
-          ],
+        // Lista de valores estilizada
+        Column(
+          children: valores.map((valor) {
+            return Container(
+              margin: const EdgeInsets.symmetric(vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE9F2FB), // mismo azul suave de las burbujas
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: const Color(0xFFCAE3FA)),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x15000000),
+                    blurRadius: 6,
+                    offset: Offset(0, 3),
+                  )
+                ],
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.star, color: Color(0xFF1E6BB8), size: 20), // ícono cool
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      valor,
+                      style: const TextStyle(
+                        color: Color(0xFF1E6BB8),
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
         ),
       ],
     );
   }
 }
-
 class _ImageCard extends StatelessWidget {
   const _ImageCard({this.imageAsset = "assets/edificio.png"});
 
@@ -168,47 +199,17 @@ class _ImageCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isMobile = MediaQuery.of(context).size.width < 720;
-
-    return Center(
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxWidth: isMobile ? 160 : 220, // 👈 controla el tamaño
-          ),
-          child: AspectRatio(
-            aspectRatio: 1, // mantiene forma cuadrada
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                Image.asset(
-                  imageAsset,
-                  fit: BoxFit.cover,
-                ),
-                Positioned.fill(
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.transparent,
-                          Colors.transparent,
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20), // 🔹 bordes redondeados
+      child: Image.asset(
+        imageAsset,
+        fit: BoxFit.cover,     // 🔹 ocupa todo el espacio recortando si es necesario
+        width: double.infinity,
+        height: 220,           // 🔹 alto fijo, puedes ajustar según tu diseño
       ),
     );
   }
 }
-
 class _ValueChip extends StatelessWidget {
   const _ValueChip({required this.label});
   final String label;

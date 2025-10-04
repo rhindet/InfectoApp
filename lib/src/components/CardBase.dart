@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class PopularArticle {
   final String imageAsset;
@@ -6,6 +7,7 @@ class PopularArticle {
   final String title;
   final String author;
   final String date;
+  final String url;
 
   const PopularArticle({
     required this.imageAsset,
@@ -13,6 +15,7 @@ class PopularArticle {
     required this.title,
     required this.author,
     required this.date,
+    required this.url,
   });
 }
 
@@ -20,8 +23,8 @@ class CardBase extends StatefulWidget {
   const CardBase({
     super.key,
     required this.articles,
-    this.height = 250,          // ↑ más alto para evitar overflow
-    this.viewportFraction = .9, // “peek” lateral
+    this.height = 280,           // alto del carrusel
+    this.viewportFraction = 0.9, // “peek” lateral
   });
 
   final List<PopularArticle> articles;
@@ -33,7 +36,7 @@ class CardBase extends StatefulWidget {
 }
 
 class _CardBaseState extends State<CardBase> {
-  PageController? _pageController; // ← null-safe
+  PageController? _pageController;
   int _index = 0;
 
   @override
@@ -45,11 +48,10 @@ class _CardBaseState extends State<CardBase> {
   @override
   void didUpdateWidget(covariant CardBase oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Si cambia el viewportFraction, recrea el controller
     if (oldWidget.viewportFraction != widget.viewportFraction) {
       _pageController?.dispose();
       _pageController = PageController(viewportFraction: widget.viewportFraction);
-      setState(() {}); // refrescar
+      setState(() {});
     }
   }
 
@@ -62,10 +64,10 @@ class _CardBaseState extends State<CardBase> {
   @override
   Widget build(BuildContext context) {
     if (widget.articles.isEmpty) return const SizedBox.shrink();
-    if (_pageController == null) return const SizedBox.shrink(); // seguridad en hot-reload
+    if (_pageController == null) return const SizedBox.shrink();
 
     return SizedBox(
-      height: widget.height + 20, // + indicador
+      height: widget.height + 20,
       child: Column(
         children: [
           SizedBox(
@@ -94,6 +96,13 @@ class _CardBaseState extends State<CardBase> {
 class _ArticleCard extends StatelessWidget {
   const _ArticleCard({required this.article});
   final PopularArticle article;
+
+  Future<void> _abrirUrl(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -147,6 +156,7 @@ class _ArticleCard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 10),
+
                 // Título
                 Align(
                   alignment: Alignment.centerLeft,
@@ -158,29 +168,48 @@ class _ArticleCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 4),
+
                 // Autor
                 Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
                     "Por ${article.author}",
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: Colors.green,
+                      color: Colors.blueAccent,
                     ),
                   ),
                 ),
                 const SizedBox(height: 12),
+
                 // Fecha + CTA
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(article.date, style: const TextStyle(color: Colors.grey)),
-                    Row(
-                      children: const [
-                        Text("ver artículo", style: TextStyle(color: Colors.grey)),
-                        SizedBox(width: 4),
-                        Icon(Icons.arrow_forward_ios_rounded, color: Colors.grey, size: 16),
-                      ],
+                    InkWell(
+                      onTap: () => _abrirUrl(article.url),
+                      borderRadius: BorderRadius.circular(8),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                        child: Row(
+                          children: const [
+                            Text(
+                              "ver más",
+                              style: TextStyle(
+                                color: Colors.blueAccent,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            SizedBox(width: 4),
+                            Icon(Icons.arrow_forward_ios_rounded,
+                              color: Colors.blueAccent,
+                              size: 16,
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ],
                 ),

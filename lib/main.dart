@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:infecto_migrado/src/components/CounterCubit.dart';
 import 'package:infecto_migrado/src/components/BottomTabNavegator.dart';
@@ -7,14 +8,19 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:infecto_migrado/src/components/article_filter_cubit.dart';
 import 'package:infecto_migrado/src/components/article_search_cubit.dart';
+import 'package:responsive_framework/responsive_framework.dart';
 
-void main() async{
+void main() async {
   final widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
   await dotenv.load(fileName: ".env");
-
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    // DeviceOrientation.portraitDown, // opcional: permitir cabeza-abajo
+  ]);
   runApp(const MyApp());
+
   Future.delayed(const Duration(milliseconds: 3000), () {
     FlutterNativeSplash.remove(); // quita la splash
   });
@@ -25,6 +31,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'Infecto App',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.white70),
@@ -32,6 +39,17 @@ class MyApp extends StatelessWidget {
         splashColor: Colors.transparent,
         highlightColor: Colors.transparent,
         useMaterial3: true,
+      ),
+      // 👇 Envoltorio RESPONSIVE global
+      builder: (context, child) => ResponsiveBreakpoints.builder(
+        child: BouncingScrollWrapper(child: child!),
+        breakpoints: const [
+          Breakpoint(start: 0, end: 360, name: MOBILE),
+          Breakpoint(start: 360, end: 480, name: 'MOBILE_L'),
+          Breakpoint(start: 480, end: 768, name: TABLET),
+          Breakpoint(start: 768, end: 1024, name: DESKTOP),
+          Breakpoint(start: 1024, end: double.infinity, name: 'XL'),
+        ],
       ),
       home: MultiBlocProvider(
         providers: [
@@ -79,8 +97,6 @@ class _MyHomePageState extends State<MyHomePage> {
                         width: 120,
                         height: 40,
                       ),
-
-
                       IconButton(
                         iconSize: 30,
                         icon: const Icon(Icons.dark_mode),
@@ -97,8 +113,6 @@ class _MyHomePageState extends State<MyHomePage> {
       body: const BottomTabNavegator(),
     );
   }
-
-
 
   void showSideModal(BuildContext outerContext) {
     showGeneralDialog(
@@ -150,11 +164,8 @@ class _MyHomePageState extends State<MyHomePage> {
       },
     );
   }
-
-
-
-
 }
+
 class _MenuPanel extends StatelessWidget {
   const _MenuPanel({
     required this.onClose,
@@ -231,34 +242,34 @@ class _MenuPanel extends StatelessWidget {
                         subtitle: 'Quiénes somos y misión',
                         onTap: onTapAcercaDe,
                       ),
-                      const Spacer(),
                       // Footer también azul
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.verified, color: Colors.white70),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'Infecto App · v1.0.0',
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: Colors.white70,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                            const Icon(Icons.copyright, size: 14, color: Colors.white54),
-                            const SizedBox(width: 4),
-                            const Text('2025',
-                                style: TextStyle(color: Colors.white54)),
-                          ],
+
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.verified, color: Colors.white70),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Infecto App · v1.0.0',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Colors.white70,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
+                      const Icon(Icons.copyright, size: 14, color: Colors.white54),
+                      const SizedBox(width: 4),
+                      const Text('2025',
+                          style: TextStyle(color: Colors.white54)),
                     ],
                   ),
                 ),
@@ -282,12 +293,11 @@ class _MenuHeader extends StatelessWidget {
       child: Row(
         children: [
           const Spacer(),
-
           Image.asset(
-              "assets/infecto_logo_blanco.png",
-              height: 40,
-              fit: BoxFit.contain,
-            ),
+            "assets/infecto_logo_blanco.png",
+            height: 40,
+            fit: BoxFit.contain,
+          ),
           const Spacer(),
           IconButton(
             onPressed: onClose,
@@ -362,7 +372,7 @@ class _Sep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Divider(
+    return const Divider(
       height: 1,
       thickness: 0.8,
       color: Colors.white24,
