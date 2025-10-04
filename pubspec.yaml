@@ -168,6 +168,7 @@ dependencies:
   responsive_framework: ^1.5.1
   image_gallery_saver: ^2.0.3
   permission_handler: ^11.3.1
+  auto_size_text: ^3.0.0
 
 
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'CardBase.dart';
+import 'package:auto_size_text/auto_size_text.dart';
 
 class InicioView extends StatefulWidget {
   const InicioView({super.key});
@@ -57,20 +58,20 @@ class _InicioViewState extends State<InicioView> {
         url: 'https://www.gob.mx/cms/uploads/attachment/file/1006720/Guia_de_manejo_antirretroviral_de_las_personas_con_VIH_2025.pdf'
       ),
       const PopularArticle(
-        imageAsset: 'assets/card.jpeg',
-        tag: 'Guía',
-        title: 'New Hypertension Guidelines 2025',
-        author: 'Dra. Pérez',
-        date: '18-07-2025',
-        url: ''
+        imageAsset: 'assets/card_2.png',
+        tag: 'Articulo',
+        title: '2024 Clinical Practice Guideline Update by the Infectious Diseases Society of America on ComplicatedIntra-abdominal Infections: Risk Assessment, DiagnosticImaging, and Microbiological Evaluation in Adults,Children, and Pregnant People',
+        author: 'Oxford Academic',
+        date: '2024',
+        url: 'https://www.idsociety.org/practice-guideline/intra-abdominal-infections/'
       ),
       const PopularArticle(
-        imageAsset: 'assets/card.jpeg',
-        tag: 'Revisión',
-        title: 'Diabetes Mellitus Type 2: Update',
-        author: 'Dr. Gómez',
-        date: '30-06-2025',
-        url: ''
+        imageAsset: 'assets/card_3.png',
+        tag: 'Articulo',
+        title: 'Guide to Utilization of the Microbiology Laboratory for Diagnosis of Infectious Diseases: 2024 Update by theInfectious Diseases Society of America (IDSA) and theAmerican Society for Microbiology (ASM)',
+        author: 'Oxford Academic',
+        date: '2024',
+        url: 'https://www.idsociety.org/practice-guideline/laboratory-diagnosis-of-infectious-diseases/'
       ),
     ];
 
@@ -98,11 +99,11 @@ class _InicioViewState extends State<InicioView> {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             children: const [
-              _QuickLinkTile(label: "Fármacos", icon: Icons.medical_services_outlined, onTap: _noop),
-              _QuickLinkTile(label: "Patógenos", icon: Icons.calculate_outlined, onTap: _noop),
-              _QuickLinkTile(label: "Vacunas", icon: Icons.event_outlined, onTap: _noop),
-              _QuickLinkTile(label: "Sindromes", icon: Icons.map_outlined, onTap: _noop),
-              _QuickLinkTile(label: "Prevencion y control", icon: Icons.science_outlined, onTap: _noop),
+              _QuickLinkTile(label: "Fármacos", imageAsset: "assets/medicamento.png", onTap: _noop),
+              _QuickLinkTile(label: "Patógenos", imageAsset:"assets/pateogeno.png", onTap: _noop),
+              _QuickLinkTile(label: "Vacunas",  imageAsset:"assets/jeringuilla.png", onTap: _noop),
+              _QuickLinkTile(label: "Sindromes",  imageAsset:"assets/sindrome-de-down.png", onTap: _noop),
+              _QuickLinkTile(label: "Prevencion y control de infecciones",  imageAsset:"assets/escudo-con-simbolo-de-hospital.png", onTap: _noop),
               //_QuickLinkTile(label: "Guías", icon: Icons.menu_book_outlined, onTap: _noop),
             ],
           ),
@@ -132,11 +133,11 @@ class _InicioViewState extends State<InicioView> {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             children: const [
-              _QuickLinkTileAlt(label: "Fármacos", icon: Icons.medication_outlined, onTap: _noop),
-              _QuickLinkTileAlt(label: "Patógeos", icon: Icons.functions_outlined, onTap: _noop),
-              _QuickLinkTileAlt(label: "Vacunas", icon: Icons.description_outlined, onTap: _noop),
-              _QuickLinkTileAlt(label: "Síndromes", icon: Icons.support_agent_outlined, onTap: _noop),
-              _QuickLinkTileAlt(label: "Prevencion y control", icon: Icons.menu_book_outlined, onTap: _noop),
+              _QuickLinkTileAlt(label: "Fármacos", imageAsset: "assets/medicamento.png", onTap: _noop),
+              _QuickLinkTileAlt(label: "Patógenos", imageAsset:"assets/patogeno.png", onTap: _noop),
+              _QuickLinkTileAlt(label: "Vacunas",  imageAsset:"assets/jeringuilla.png", onTap: _noop),
+              _QuickLinkTileAlt(label: "Sindromes",  imageAsset:"assets/sindrome-de-down.png", onTap: _noop),
+              _QuickLinkTileAlt(label: "Prevencion y control de infecciones",  imageAsset:"assets/escudo-con-simbolo-de-hospital.png", onTap: _noop),
              // _QuickLinkTileAlt(label: "Farmacología", icon: Icons.science_outlined, onTap: _noop),
             ],
           ),
@@ -267,16 +268,20 @@ void _noop() {}
 /// ---------- Cuadrado claro ----------
 class _QuickLinkTile extends StatelessWidget {
   final String label;
-  final IconData icon;
+  final String imageAsset; // 👈 ruta de tu imagen en assets (por ejemplo: 'assets/icons/vacuna.png')
   final VoidCallback onTap;
-  const _QuickLinkTile({required this.label, required this.icon, required this.onTap});
+
+  const _QuickLinkTile({
+    required this.label,
+    required this.imageAsset,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     const Color surface = Colors.white;
     const Color border = Color(0xFFE6E8EC);
     const Color textColor = Color(0xFF1F2A37);
-    const Color primary = Color(0xFF146EB4);
     const Color chipBg = Color(0xFFE8F2FB);
 
     return InkWell(
@@ -287,23 +292,45 @@ class _QuickLinkTile extends StatelessWidget {
           color: surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: border, width: 1),
-          boxShadow: const [BoxShadow(color: Color(0x0F000000), blurRadius: 8, offset: Offset(0, 2))],
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x0F000000),
+              blurRadius: 8,
+              offset: Offset(0, 2),
+            ),
+          ],
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            // 🔹 Imagen en lugar del ícono
             Container(
-              width: 32, height: 32,
-              decoration: BoxDecoration(color: chipBg, shape: BoxShape.circle, border: Border.all(color: border)),
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: chipBg,
+                shape: BoxShape.circle,
+                border: Border.all(color: border),
+              ),
               alignment: Alignment.center,
-              child: Icon(icon, color: primary, size: 18),
+              child: Image.asset(
+                imageAsset,
+                width: 22,
+                height: 22,
+                fit: BoxFit.contain,
+              ),
             ),
             const SizedBox(height: 6),
+            // 🔹 Texto
             Text(
               label,
               maxLines: 2,
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: textColor),
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: textColor,
+              ),
             ),
           ],
         ),
@@ -312,16 +339,21 @@ class _QuickLinkTile extends StatelessWidget {
   }
 }
 
+
 /// ---------- Cuadrado azul (gradiente) ----------
 class _QuickLinkTileAlt extends StatelessWidget {
   final String label;
-  final IconData icon;
+  final String imageAsset;
   final VoidCallback onTap;
-  const _QuickLinkTileAlt({required this.label, required this.icon, required this.onTap});
+
+  const _QuickLinkTileAlt({
+    required this.label,
+    required this.imageAsset,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    // Azul más claro
     const Color primary     = Color(0xFF4A90E2);
     const Color primaryDark = Color(0xFF407EBD);
 
@@ -336,29 +368,58 @@ class _QuickLinkTileAlt extends StatelessWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
-          boxShadow: const [BoxShadow(color: Color(0x14000000), blurRadius: 10, offset: Offset(0, 4))],
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 34, height: 34,
-              decoration: BoxDecoration(color: Colors.white.withOpacity(0.12), shape: BoxShape.circle),
-              alignment: Alignment.center,
-              child: Icon(icon, color: Colors.white, size: 18),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: Colors.white),
-            ),
+          boxShadow: const [
+            BoxShadow(color: Color(0x14000000), blurRadius: 10, offset: Offset(0, 4)),
           ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8), // da un poco de respiro lateral
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Icono en círculo
+              Container(
+                width: 40, height: 40,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.15),
+                  shape: BoxShape.circle,
+                ),
+                alignment: Alignment.center,
+                child: Image.asset(
+                  imageAsset,
+                  width: 22, height: 22,
+                  fit: BoxFit.contain,
+                  color: Colors.white, // quítalo si quieres conservar colores del PNG
+                ),
+              ),
+
+              const SizedBox(height: 8),
+
+              // Texto auto–ajustable (sin cambiar tamaño del card)
+              SizedBox(
+                width: double.infinity,
+                child: AutoSizeText(
+                  label,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  minFontSize: 9,            // hasta dónde puede reducir
+                  stepGranularity: 0.5,       // pasos finos de reducción
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
+
 
 /// ---------- Rectangular OUTLINED ----------
 class _QuickLinkRect extends StatelessWidget {
