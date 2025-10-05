@@ -767,6 +767,64 @@ List<Widget> _buildHtmlSegments(String html, BuildContext context, String highli
   final widgets = <Widget>[];
   int last = 0;
 
+  // 🎨 Paleta dependiente de tema
+  final isDark       = Theme.of(context).brightness == Brightness.dark;
+  final tableBg      = isDark ? const Color(0xFF121417) : Colors.white;
+  final theadBg      = isDark ? const Color(0xFF1F2937) : const Color(0xFFEFEFEF);
+  final cellText     = isDark ? Colors.white : const Color(0xFF222222);
+  final borderColor  = isDark ? const Color(0x33FFFFFF) : const Color(0x33000000);
+  final mutedColor   = isDark ? Colors.white70 : Colors.black54;
+  final pillBg       = isDark ? const Color(0x332196F3) : const Color(0xFFE9F2FB);
+  final pillText     = isDark ? const Color(0xFF93C5FD) : const Color(0xFF1E6BB8);
+
+  Map<String, Style> baseStyles() => {
+    "mark": Style(
+      backgroundColor: const Color(0xFFFFFF00),
+      padding: HtmlPaddings.symmetric(horizontal: 2, vertical: 1),
+    ),
+    "a": Style(
+      color: isDark ? const Color(0xFF93C5FD) : const Color(0xFF1E6BB8),
+      textDecoration: TextDecoration.underline,
+      fontWeight: FontWeight.w600,
+    ),
+    "p": Style(margin: Margins.zero, color: cellText),
+    "h1": Style(fontSize: FontSize(26), fontWeight: FontWeight.w700, color: cellText),
+    "h2": Style(fontSize: FontSize(18), fontWeight: FontWeight.w700, color: cellText),
+    ".muted": Style(color: mutedColor),
+    ".pill": Style(
+      display: Display.inlineBlock,
+      padding: HtmlPaddings.symmetric(horizontal: 8, vertical: 4),
+      backgroundColor: pillBg,
+      color: pillText,
+      margin: Margins.only(right: 6, bottom: 6),
+      border: Border.all(color: isDark ? const Color(0x3393C5FD) : const Color(0xFFCAE3FA), width: 1),
+      fontWeight: FontWeight.w700,
+      fontSize: FontSize(12),
+    ),
+    // Tabla
+    "table": Style(
+      width: Width.auto(),
+      backgroundColor: tableBg,
+      margin: Margins.only(bottom: 0),
+      border: Border.all(color: borderColor, width: 1),
+    ),
+    "tr": Style(backgroundColor: tableBg),
+    "th": Style(
+      color: cellText,
+      fontWeight: FontWeight.w700,
+      padding: HtmlPaddings.all(6),
+      backgroundColor: theadBg,
+      border: Border.all(color: borderColor, width: 1),
+    ),
+    "td": Style(
+      color: cellText,
+      backgroundColor: tableBg,
+      padding: HtmlPaddings.all(6),
+      border: Border.all(color: borderColor, width: 1),
+      whiteSpace: WhiteSpace.pre, // conserva saltos/espacios
+    ),
+  };
+
   for (final m in _tableRx.allMatches(html)) {
     if (m.start > last) {
       final before = html.substring(last, m.start).trim();
@@ -783,32 +841,7 @@ List<Widget> _buildHtmlSegments(String html, BuildContext context, String highli
                   const TableHtmlExtension(),
                   ...spanDecorExtensions(),
                 ],
-                style:  {
-                  "mark": Style(
-                    backgroundColor: const Color(0xFFFFFF00),
-                    padding: HtmlPaddings.symmetric(horizontal: 2, vertical: 1),
-                  ),
-                  "p": Style(margin: Margins.zero),
-                  "h1": Style(fontSize: FontSize(26), fontWeight: FontWeight.w700),
-                  "h2": Style(fontSize: FontSize(18), fontWeight: FontWeight.w700),
-                  "td": Style(whiteSpace: WhiteSpace.pre),
-                  ".muted": Style(color: Colors.black54),
-                  ".pill": Style(
-                    display: Display.inlineBlock,
-                    padding: HtmlPaddings.symmetric(horizontal: 8, vertical: 4),
-                    backgroundColor: const Color(0xFFE9F2FB),
-                    color: const Color(0xFF1E6BB8),
-                    margin: Margins.only(right: 6, bottom: 6),
-                    border: const Border(
-                      left: BorderSide(color: Color(0xFFCAE3FA), width: 1),
-                      top: BorderSide(color: Color(0xFFCAE3FA), width: 1),
-                      right: BorderSide(color: Color(0xFFCAE3FA), width: 1),
-                      bottom: BorderSide(color: Color(0xFFCAE3FA), width: 1),
-                    ),
-                    fontWeight: FontWeight.w700,
-                    fontSize: FontSize(12),
-                  ),
-                },
+                style: baseStyles(),
               ),
             ),
           ),
@@ -832,50 +865,7 @@ List<Widget> _buildHtmlSegments(String html, BuildContext context, String highli
                   const TableHtmlExtension(),
                   ...spanDecorExtensions(),
                 ],
-                style:  {
-                  "mark": Style(
-                    backgroundColor: const Color(0xFFFFFF00),
-                    padding: HtmlPaddings.symmetric(horizontal: 2, vertical: 1),
-                  ),
-                  "table": Style(width: Width.auto(), margin: Margins.only(bottom: 0)),
-                  "th": Style(
-                    fontWeight: FontWeight.w700,
-                    padding: HtmlPaddings.all(6),
-                    backgroundColor: const Color(0xFFEFEFEF),
-                    border: const Border(
-                      top: BorderSide(width: 1, color: Color(0x33000000)),
-                      right: BorderSide(width: 1, color: Color(0x33000000)),
-                      bottom: BorderSide(width: 1, color: Color(0x33000000)),
-                      left: BorderSide(width: 1, color: Color(0x33000000)),
-                    ),
-                  ),
-                  "td": Style(
-                    padding: HtmlPaddings.all(6),
-                    border: const Border(
-                      top: BorderSide(width: 1, color: Color(0x33000000)),
-                      right: BorderSide(width: 1, color: Color(0x33000000)),
-                      bottom: BorderSide(width: 1, color: Color(0x33000000)),
-                      left: BorderSide(width: 1, color: Color(0x33000000)),
-                    ),
-                    whiteSpace: WhiteSpace.pre,
-                  ),
-                  ".muted": Style(color: Colors.black54),
-                  ".pill": Style(
-                    display: Display.inlineBlock,
-                    padding: HtmlPaddings.symmetric(horizontal: 8, vertical: 4),
-                    backgroundColor: const Color(0xFFE9F2FB),
-                    color: const Color(0xFF1E6BB8),
-                    margin: Margins.only(right: 6, bottom: 6),
-                    border: const Border(
-                      left: BorderSide(color: Color(0xFFCAE3FA), width: 1),
-                      top: BorderSide(color: Color(0xFFCAE3FA), width: 1),
-                      right: BorderSide(color: Color(0xFFCAE3FA), width: 1),
-                      bottom: BorderSide(color: Color(0xFFCAE3FA), width: 1),
-                    ),
-                    fontWeight: FontWeight.w700,
-                    fontSize: FontSize(12),
-                  ),
-                },
+                style: baseStyles(),
               );
 
               return Scrollbar(
@@ -912,30 +902,10 @@ List<Widget> _buildHtmlSegments(String html, BuildContext context, String highli
                 const TableHtmlExtension(),
                 ...spanDecorExtensions(),
               ],
-              style:  {
-                "mark": Style(
-                  backgroundColor: const Color(0xFFFFFF00),
-                  padding: HtmlPaddings.symmetric(horizontal: 2, vertical: 1),
-                ),
-                "p": Style(margin: Margins.only(bottom: 8)),
-                "td": Style(whiteSpace: WhiteSpace.pre),
-                ".muted": Style(color: Colors.black54),
-                ".pill": Style(
-                  display: Display.inlineBlock,
-                  padding: HtmlPaddings.symmetric(horizontal: 8, vertical: 4),
-                  backgroundColor: const Color(0xFFE9F2FB),
-                  color: const Color(0xFF1E6BB8),
-                  margin: Margins.only(right: 6, bottom: 6),
-                  border: const Border(
-                    left: BorderSide(color: Color(0xFFCAE3FA), width: 1),
-                    top: BorderSide(color: Color(0xFFCAE3FA), width: 1),
-                    right: BorderSide(color: Color(0xFFCAE3FA), width: 1),
-                    bottom: BorderSide(color: Color(0xFFCAE3FA), width: 1),
-                  ),
-                  fontWeight: FontWeight.w700,
-                  fontSize: FontSize(12),
-                ),
-              },
+              style: baseStyles()
+                ..addAll({
+                  "p": Style(margin: Margins.only(bottom: 8), color: cellText),
+                }),
             ),
           ),
         ),
@@ -956,30 +926,7 @@ List<Widget> _buildHtmlSegments(String html, BuildContext context, String highli
               const TableHtmlExtension(),
               ...spanDecorExtensions(),
             ],
-            style:  {
-              "mark": Style(
-                backgroundColor: const Color(0xFFFFFF00),
-                padding: HtmlPaddings.symmetric(horizontal: 2, vertical: 1),
-              ),
-              "table": Style(width: Width.auto()),
-              "td": Style(whiteSpace: WhiteSpace.pre),
-              ".muted": Style(color: Colors.black54),
-              ".pill": Style(
-                display: Display.inlineBlock,
-                padding: HtmlPaddings.symmetric(horizontal: 8, vertical: 4),
-                backgroundColor: const Color(0xFFE9F2FB),
-                color: const Color(0xFF1E6BB8),
-                margin: Margins.only(right: 6, bottom: 6),
-                border: const Border(
-                  left: BorderSide(color: Color(0xFFCAE3FA), width: 1),
-                  top: BorderSide(color: Color(0xFFCAE3FA), width: 1),
-                  right: BorderSide(color: Color(0xFFCAE3FA), width: 1),
-                  bottom: BorderSide(color: Color(0xFFCAE3FA), width: 1),
-                ),
-                fontWeight: FontWeight.w700,
-                fontSize: FontSize(12),
-              ),
-            },
+            style: baseStyles(),
           ),
         ),
       ),
@@ -988,7 +935,6 @@ List<Widget> _buildHtmlSegments(String html, BuildContext context, String highli
 
   return widgets;
 }
-
 /// ===== Extensión para <span data-border> y opcionalmente data-highlight =====
 List<HtmlExtension> spanDecorExtensions() => [
   TagExtension(
