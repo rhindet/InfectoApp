@@ -386,26 +386,32 @@ class GuiaView extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: BlocBuilder<GuiaSectionCubit, GuiaState>(
+                      buildWhen: (prev, curr) =>
+                          prev.level != curr.level ||
+                          prev.showArticleDetail != curr.showArticleDetail ||
+                          prev.articleId != curr.articleId ||
+                          prev.title0 != curr.title0 ||
+                          prev.title1 != curr.title1 ||
+                          prev.title2 != curr.title2 ||
+                          prev.title3 != curr.title3,
                       builder: (context, s) {
                         final isRootNoArticle = (s.level == 0) && !s.showArticleDetail;
                         final isDark = Theme.of(context).brightness == Brightness.dark;
-
                         if (isRootNoArticle) {
                           return Row(
                             children: [
                               Icon(
                                 Icons.menu_book,
                                 color: isDark ? Colors.white : Colors.black,
-                              ),                              const SizedBox(width: 8),
+                              ),
+                              const SizedBox(width: 8),
                               const Text('Guía', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                             ],
                           );
                         }
-        
                         final title = s.showArticleDetail
                             ? (s.articleTitle ?? 'Artículo')
                             : (s.title3 ?? s.title2 ?? s.title1 ?? s.title0) ?? 'Detalle';
-        
                         return Row(
                           children: [
                             Material(
@@ -428,14 +434,23 @@ class GuiaView extends StatelessWidget {
                               ),
                             ),
                           ],
-                        );                    },
+                        );
+                      },
                     ),
                   ),
                   const SizedBox(height: 24),
-        
+
                   // Contenido
                   Expanded(
                     child: BlocBuilder<GuiaSectionCubit, GuiaState>(
+                      buildWhen: (prev, curr) =>
+                          prev.level != curr.level ||
+                          prev.showArticleDetail != curr.showArticleDetail ||
+                          prev.articleId != curr.articleId ||
+                          prev.title0 != curr.title0 ||
+                          prev.title1 != curr.title1 ||
+                          prev.title2 != curr.title2 ||
+                          prev.title3 != curr.title3,
                       builder: (context, s) {
                         return AnimatedSwitcher(
                           duration: const Duration(milliseconds: 300),
@@ -466,7 +481,7 @@ class GuiaView extends StatelessWidget {
                             },
                             builder: (context, search) {
                               final showResults = search.loading || search.committed.trim().isNotEmpty;
-        
+
                               if (showResults) {
                                 if (search.loading) {
                                   return const Center(child: CircularProgressIndicator());
@@ -488,9 +503,9 @@ class GuiaView extends StatelessWidget {
                                     ),
                                   );
                                 }
-        
-        
-        
+
+
+
                                 final results = search.results!;
                                 if (results.isEmpty) {
                                   return const Center(child: Text('Sin resultados'));
@@ -517,7 +532,7 @@ class GuiaView extends StatelessWidget {
                                   },
                                 );
                               }
-        
+
                               // 🔁 Sin query → comportamiento jerárquico original
                               return FutureBuilder<List<GuiaRow>>(
                                 key: ValueKey('level-${s.level}-${s.key0}-${s.key1}-${s.key2}-${s.key3}-${s.articleId ?? ''}'),
@@ -545,7 +560,7 @@ class GuiaView extends StatelessWidget {
                                   }
                                   final rows = snap.data ?? const <GuiaRow>[];
                                   if (rows.isEmpty) return const Center(child: Text('Sin datos'));
-        
+
                                   return RefreshIndicator(
                                     onRefresh: () async => (context as Element).markNeedsBuild(),
                                     child: ListView.separated(
@@ -560,13 +575,13 @@ class GuiaView extends StatelessWidget {
                                           color: Colors.blue,
                                           onTap: () {
                                             final cubit = context.read<GuiaSectionCubit>();
-        
+
                                             if (r.isArticle) {
                                               // Abrir detalle de artículo (nivel 5)
                                               cubit.showArticle(articleId: r.id, articleTitle: r.label);
                                               return;
                                             }
-        
+
                                             // No es artículo → navegar al siguiente nivel según el estado actual
                                             switch (s.level) {
                                               case 0:
@@ -635,9 +650,10 @@ class _ArticleDetail extends StatelessWidget {
           return const Center(child: Text('No se pudo cargar el artículo'));
         }
 
-        final query = context.read<ArticleSearchCubit>().state.query;
+        final query = ''; // No resaltado en el detalle para NO alterar el HTML original
 
         return ListView(
+          key: PageStorageKey('article-$articleId'),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
           children: [
             if ((a.contenidos).isNotEmpty) ...[
@@ -758,9 +774,11 @@ List<Widget> _buildHtmlSegments(String html, BuildContext context, String highli
         widgets.add(
           Padding(
             padding: const EdgeInsets.only(bottom: 10),
-            child: SelectionArea(
+            child: SelectionContainer.disabled(
               child: Html(
-                data: highlightHtml(sanitizeFontFeatures(before), highlightQuery),
+                data: (highlightQuery.isEmpty)
+                    ? sanitizeFontFeatures(before)
+                    : highlightHtml(sanitizeFontFeatures(before), highlightQuery),
                 extensions: [
                   const TableHtmlExtension(),
                   ...spanDecorExtensions(),
@@ -774,6 +792,22 @@ List<Widget> _buildHtmlSegments(String html, BuildContext context, String highli
                   "h1": Style(fontSize: FontSize(26), fontWeight: FontWeight.w700),
                   "h2": Style(fontSize: FontSize(18), fontWeight: FontWeight.w700),
                   "td": Style(whiteSpace: WhiteSpace.pre),
+                  ".muted": Style(color: Colors.black54),
+                  ".pill": Style(
+                    display: Display.inlineBlock,
+                    padding: HtmlPaddings.symmetric(horizontal: 8, vertical: 4),
+                    backgroundColor: const Color(0xFFE9F2FB),
+                    color: const Color(0xFF1E6BB8),
+                    margin: Margins.only(right: 6, bottom: 6),
+                    border: const Border(
+                      left: BorderSide(color: Color(0xFFCAE3FA), width: 1),
+                      top: BorderSide(color: Color(0xFFCAE3FA), width: 1),
+                      right: BorderSide(color: Color(0xFFCAE3FA), width: 1),
+                      bottom: BorderSide(color: Color(0xFFCAE3FA), width: 1),
+                    ),
+                    fontWeight: FontWeight.w700,
+                    fontSize: FontSize(12),
+                  ),
                 },
               ),
             ),
@@ -786,12 +820,14 @@ List<Widget> _buildHtmlSegments(String html, BuildContext context, String highli
     widgets.add(
       Padding(
         padding: const EdgeInsets.only(bottom: 10),
-        child: SelectionArea(
+        child: SelectionContainer.disabled(
           child: LayoutBuilder(
             builder: (ctx, constraints) {
               final minW = constraints.maxWidth;
               final table = Html(
-                data: highlightHtml(sanitizeFontFeatures(tableHtml), highlightQuery),
+                data: (highlightQuery.isEmpty)
+                    ? sanitizeFontFeatures(tableHtml)
+                    : highlightHtml(sanitizeFontFeatures(tableHtml), highlightQuery),
                 extensions: [
                   const TableHtmlExtension(),
                   ...spanDecorExtensions(),
@@ -823,6 +859,22 @@ List<Widget> _buildHtmlSegments(String html, BuildContext context, String highli
                     ),
                     whiteSpace: WhiteSpace.pre,
                   ),
+                  ".muted": Style(color: Colors.black54),
+                  ".pill": Style(
+                    display: Display.inlineBlock,
+                    padding: HtmlPaddings.symmetric(horizontal: 8, vertical: 4),
+                    backgroundColor: const Color(0xFFE9F2FB),
+                    color: const Color(0xFF1E6BB8),
+                    margin: Margins.only(right: 6, bottom: 6),
+                    border: const Border(
+                      left: BorderSide(color: Color(0xFFCAE3FA), width: 1),
+                      top: BorderSide(color: Color(0xFFCAE3FA), width: 1),
+                      right: BorderSide(color: Color(0xFFCAE3FA), width: 1),
+                      bottom: BorderSide(color: Color(0xFFCAE3FA), width: 1),
+                    ),
+                    fontWeight: FontWeight.w700,
+                    fontSize: FontSize(12),
+                  ),
                 },
               );
 
@@ -851,9 +903,11 @@ List<Widget> _buildHtmlSegments(String html, BuildContext context, String highli
       widgets.add(
         Padding(
           padding: const EdgeInsets.only(bottom: 10),
-          child: SelectionArea(
+          child: SelectionContainer.disabled(
             child: Html(
-              data: highlightHtml(sanitizeFontFeatures(after), highlightQuery),
+              data: (highlightQuery.isEmpty)
+                  ? sanitizeFontFeatures(after)
+                  : highlightHtml(sanitizeFontFeatures(after), highlightQuery),
               extensions: [
                 const TableHtmlExtension(),
                 ...spanDecorExtensions(),
@@ -865,6 +919,22 @@ List<Widget> _buildHtmlSegments(String html, BuildContext context, String highli
                 ),
                 "p": Style(margin: Margins.only(bottom: 8)),
                 "td": Style(whiteSpace: WhiteSpace.pre),
+                ".muted": Style(color: Colors.black54),
+                ".pill": Style(
+                  display: Display.inlineBlock,
+                  padding: HtmlPaddings.symmetric(horizontal: 8, vertical: 4),
+                  backgroundColor: const Color(0xFFE9F2FB),
+                  color: const Color(0xFF1E6BB8),
+                  margin: Margins.only(right: 6, bottom: 6),
+                  border: const Border(
+                    left: BorderSide(color: Color(0xFFCAE3FA), width: 1),
+                    top: BorderSide(color: Color(0xFFCAE3FA), width: 1),
+                    right: BorderSide(color: Color(0xFFCAE3FA), width: 1),
+                    bottom: BorderSide(color: Color(0xFFCAE3FA), width: 1),
+                  ),
+                  fontWeight: FontWeight.w700,
+                  fontSize: FontSize(12),
+                ),
               },
             ),
           ),
@@ -877,9 +947,11 @@ List<Widget> _buildHtmlSegments(String html, BuildContext context, String highli
     widgets.add(
       Padding(
         padding: const EdgeInsets.only(bottom: 10),
-        child: SelectionArea(
+        child: SelectionContainer.disabled(
           child: Html(
-            data: highlightHtml(sanitizeFontFeatures(html), highlightQuery),
+            data: (highlightQuery.isEmpty)
+                ? sanitizeFontFeatures(html)
+                : highlightHtml(sanitizeFontFeatures(html), highlightQuery),
             extensions: [
               const TableHtmlExtension(),
               ...spanDecorExtensions(),
@@ -891,6 +963,22 @@ List<Widget> _buildHtmlSegments(String html, BuildContext context, String highli
               ),
               "table": Style(width: Width.auto()),
               "td": Style(whiteSpace: WhiteSpace.pre),
+              ".muted": Style(color: Colors.black54),
+              ".pill": Style(
+                display: Display.inlineBlock,
+                padding: HtmlPaddings.symmetric(horizontal: 8, vertical: 4),
+                backgroundColor: const Color(0xFFE9F2FB),
+                color: const Color(0xFF1E6BB8),
+                margin: Margins.only(right: 6, bottom: 6),
+                border: const Border(
+                  left: BorderSide(color: Color(0xFFCAE3FA), width: 1),
+                  top: BorderSide(color: Color(0xFFCAE3FA), width: 1),
+                  right: BorderSide(color: Color(0xFFCAE3FA), width: 1),
+                  bottom: BorderSide(color: Color(0xFFCAE3FA), width: 1),
+                ),
+                fontWeight: FontWeight.w700,
+                fontSize: FontSize(12),
+              ),
             },
           ),
         ),

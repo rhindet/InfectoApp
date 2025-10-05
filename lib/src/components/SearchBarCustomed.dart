@@ -5,7 +5,7 @@ class SearchBarCustomed extends StatefulWidget {
   final ValueChanged<String>? onChanged;
   final VoidCallback? onTapped;
   final ValueChanged<String>? onSubmitted;
-  final VoidCallback? onClear;             // 👈 NUEVO: callback unificado
+  final VoidCallback? onClear; // se llama cuando el texto pasa de no-vacío -> vacío
   final String hint;
 
   const SearchBarCustomed({
@@ -26,36 +26,44 @@ class _SearchBarCustomedState extends State<SearchBarCustomed> {
   late final TextEditingController _ctl;
   late final bool _ownsController;
 
+  String _lastText = ''; // guarda el último valor para detectar cambios reales
+
   @override
   void initState() {
     super.initState();
     _ownsController = widget.controller == null;
     _ctl = widget.controller ?? TextEditingController();
+    _lastText = _ctl.text;
 
-    // Cuando el texto cambia a vacío manualmente, dispara onClear()
+    // Listener que solo reconstruye cuando cambia el texto
     _ctl.addListener(() {
-      if (_ctl.text.trim().isEmpty) {
+      final current = _ctl.text;
+      if (current == _lastText) return; // nada cambió → no reconstruyas
+
+      final wasEmpty = _lastText.trim().isEmpty;
+      final isEmpty = current.trim().isEmpty;
+
+      // reconstruye (visibilidad de la X, hint, etc.)
+      setState(() {});
+
+      // dispara onClear SOLO cuando va de no-vacío → vacío
+      if (!wasEmpty && isEmpty) {
         widget.onClear?.call();
       }
-      // No hacemos setState aquí para evitar rebuilds innecesarios
-      // Solo lo haremos cuando sea necesario (por ejemplo, al pulsar X)
-      setState(() {}); // para mostrar/ocultar la X dinámicamente
+
+      _lastText = current;
     });
   }
 
   @override
   void dispose() {
-    if (_ownsController) {
-      _ctl.dispose();
-    }
+    if (_ownsController) _ctl.dispose();
     super.dispose();
   }
 
   void _handleClear() {
-    // Limpia el campo y llama el mismo callback que el borrado manual
-    _ctl.clear();
-    widget.onClear?.call();
-    setState(() {}); // actualizar visibilidad de la X
+    if (_ctl.text.isEmpty) return; // evita eventos redundantes
+    _ctl.clear(); // esto disparará el listener y llamará onClear() si toca
   }
 
   @override
@@ -81,11 +89,7 @@ class _SearchBarCustomedState extends State<SearchBarCustomed> {
       child: TextField(
         controller: _ctl,
         onTap: widget.onTapped,
-        onChanged: (text) {
-          // Propaga el cambio
-          widget.onChanged?.call(text);
-          // OJO: el listener del controller ya llama onClear() cuando queda vacío
-        },
+        onChanged: widget.onChanged, // ya no llamamos onClear aquí; lo decide el listener
         onSubmitted: widget.onSubmitted,
         textInputAction: TextInputAction.search,
         decoration: InputDecoration(
@@ -96,7 +100,7 @@ class _SearchBarCustomedState extends State<SearchBarCustomed> {
           ),
           prefixIcon: Icon(Icons.search, color: Colors.grey.shade400),
 
-          // 👇 misma experiencia: tocar X o borrar manual = onClear()
+          // X solo visible cuando hay texto
           suffixIcon: hasText
               ? IconButton(
             tooltip: 'Borrar',
@@ -105,7 +109,8 @@ class _SearchBarCustomedState extends State<SearchBarCustomed> {
           )
               : null,
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 14),
+          contentPadding:
+          const EdgeInsets.symmetric(horizontal: 4, vertical: 14),
         ),
       ),
     );
