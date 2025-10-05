@@ -22,9 +22,14 @@ class ContactCard extends StatelessWidget {
     final subtitleColor = isDark ? Colors.white70 : Colors.black54;
     final dividerColor  = isDark ? Colors.white12 : Colors.black12;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Material(
+    return SingleChildScrollView(
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom + 16, // espacio extra cuando aparece el teclado
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Material(
         elevation: 8,
         color: cardBg,
         shadowColor: cardShadow,
@@ -142,6 +147,7 @@ class ContactCard extends StatelessWidget {
               ),
             ),
           ],
+        ),
         ),
       ),
     );
