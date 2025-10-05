@@ -138,7 +138,13 @@ class GuiaState {
 
 /// Cubit para manejar navegación
 class GuiaSectionCubit extends Cubit<GuiaState> {
-  GuiaSectionCubit() : super(const GuiaState());
+  GuiaSectionCubit({
+    this.exitToParentWhenBackFromLevel1 = false,
+    this.onExit,
+  }) : super(const GuiaState());
+
+  final bool exitToParentWhenBackFromLevel1;
+  final VoidCallback? onExit;
 
   void openLevel1({required String key0, required String title0}) =>
       emit(state.toLevel1(key0: key0, title0: title0));
@@ -196,7 +202,10 @@ class GuiaSectionCubit extends Cubit<GuiaState> {
         )
             .copyWith(isArticleMode: false),
       );
-    } else if (state.level == 3) {
+      return;
+    }
+
+    if (state.level == 3) {
       emit(
         state
             .toLevel2(
@@ -205,15 +214,30 @@ class GuiaSectionCubit extends Cubit<GuiaState> {
         )
             .copyWith(isArticleMode: false),
       );
-    } else if (state.level == 2) {
+      return;
+    }
+
+    if (state.level == 2) {
       emit(
         state
             .toLevel1(key0: state.key0!, title0: state.title0!)
             .copyWith(isArticleMode: false),
       );
-    } else if (state.level == 1) {
-      emit(state.toLevel0().copyWith(isArticleMode: false));
+      return;
     }
+
+    if (state.level == 1) {
+      // Si venimos desde InicioView y queremos volver allí, dispara el callback
+      if (exitToParentWhenBackFromLevel1 && onExit != null) {
+        onExit!();
+        return;
+      }
+      // Comportamiento normal: volver a nivel 0 dentro de la guía
+      emit(state.toLevel0().copyWith(isArticleMode: false));
+      return;
+    }
+
+    // En nivel 0 no hacemos nada aquí (lo maneja el Navigator/WillPopScope)
   }
 }
 
@@ -233,8 +257,18 @@ class GuiaRow {
 }
 
 class GuiaView extends StatelessWidget {
-  GuiaView({super.key});
+  final String? initialKey0;
+  final String? initialTitle0;
+  final bool exitToParentWhenBackFromLevel1;
+  final VoidCallback? onExit;
 
+  GuiaView({
+    super.key,
+    this.initialKey0,
+    this.initialTitle0,
+    this.exitToParentWhenBackFromLevel1 = false,
+    this.onExit,
+  });
   bool isArticleMode = false;
 
   final Map<String, IconData> _iconos = const {
@@ -322,234 +356,250 @@ class GuiaView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => GuiaSectionCubit(),
-      child: WillPopScope(
-        onWillPop: () async {
-          final s = context.read<GuiaSectionCubit>().state;
-          if (s.showArticleDetail || s.level > 0) {
-            context.read<GuiaSectionCubit>().back();
-            return false;
-          }
-          return true;
-        },
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.only(top: 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: BlocBuilder<GuiaSectionCubit, GuiaState>(
-                    builder: (context, s) {
-                      final isRootNoArticle = (s.level == 0) && !s.showArticleDetail;
+      create: (_) {
+        final cubit = GuiaSectionCubit(
+          exitToParentWhenBackFromLevel1: exitToParentWhenBackFromLevel1,
+          onExit: onExit,
+        );
+        if (initialKey0 != null && initialTitle0 != null) {
+          cubit.openLevel1(key0: initialKey0!, title0: initialTitle0!);
+        }
+        return cubit;
+      },
+      child: Scaffold(
+        body: WillPopScope(
+          onWillPop: () async {
+            final s = context.read<GuiaSectionCubit>().state;
+            if (s.showArticleDetail || s.level > 0) {
+              context.read<GuiaSectionCubit>().back();
+              return false;
+            }
+            return true;
+          },
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.only(top: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: BlocBuilder<GuiaSectionCubit, GuiaState>(
+                      builder: (context, s) {
+                        final isRootNoArticle = (s.level == 0) && !s.showArticleDetail;
+                        final isDark = Theme.of(context).brightness == Brightness.dark;
 
-                      if (isRootNoArticle) {
-                        return const Row(
-                          children: [
-                            Icon(Icons.menu_book, color: Colors.black),
-                            SizedBox(width: 8),
-                            Text('Guía', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                          ],
-                        );
-                      }
-
-                      final title = s.showArticleDetail
-                          ? (s.articleTitle ?? 'Artículo')
-                          : (s.title3 ?? s.title2 ?? s.title1 ?? s.title0) ?? 'Detalle';
-
-                      return Row(
-                        children: [
-                          InkWell(
-                            onTap: () => context.read<GuiaSectionCubit>().back(),
-                            borderRadius: BorderRadius.circular(4),
-                            child: const Padding(
-                              padding: EdgeInsets.all(4),
-                              child: Icon(Icons.arrow_back, size: 24),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Flexible(
-                            child: Text(
-                              title,
-                              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                ),
-                const SizedBox(height: 24),
-
-                // Contenido
-                Expanded(
-                  child: BlocBuilder<GuiaSectionCubit, GuiaState>(
-                    builder: (context, s) {
-                      return AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 300),
-                        switchInCurve: Curves.easeOut,
-                        switchOutCurve: Curves.easeIn,
-                        transitionBuilder: (child, anim) {
-                          final slide = Tween<Offset>(
-                            begin: const Offset(0.06, 0),
-                            end: Offset.zero,
-                          ).animate(anim);
-                          return FadeTransition(
-                            opacity: anim,
-                            child: SlideTransition(position: slide, child: child),
+                        if (isRootNoArticle) {
+                          return Row(
+                            children: [
+                              Icon(
+                                Icons.menu_book,
+                                color: isDark ? Colors.white : Colors.black,
+                              ),                              const SizedBox(width: 8),
+                              const Text('Guía', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                            ],
                           );
-                        },
-                        child: s.showArticleDetail
-                            ? _ArticleDetail(articleId: s.articleId!)
-                            : BlocBuilder<ArticleSearchCubit, ArticleSearchState>(
-                          buildWhen: (prev, curr) {
-                            final sameResults = prev.results.length == curr.results.length &&
-                                prev.results.asMap().entries.every(
-                                      (e) => e.value.id == curr.results[e.key].id && e.value.label == curr.results[e.key].label,
-                                );
-                            return prev.committed != curr.committed ||
-                                prev.loading   != curr.loading   ||
-                                prev.error     != curr.error     ||
-                                !sameResults;
+                        }
+        
+                        final title = s.showArticleDetail
+                            ? (s.articleTitle ?? 'Artículo')
+                            : (s.title3 ?? s.title2 ?? s.title1 ?? s.title0) ?? 'Detalle';
+        
+                        return Row(
+                          children: [
+                            Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(4),
+                                onTap: () => context.read<GuiaSectionCubit>().back(),
+                                child: const Padding(
+                                  padding: EdgeInsets.all(4),
+                                  child: Icon(Icons.arrow_back, size: 24),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Flexible(
+                              child: Text(
+                                title,
+                                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        );                    },
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+        
+                  // Contenido
+                  Expanded(
+                    child: BlocBuilder<GuiaSectionCubit, GuiaState>(
+                      builder: (context, s) {
+                        return AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 300),
+                          switchInCurve: Curves.easeOut,
+                          switchOutCurve: Curves.easeIn,
+                          transitionBuilder: (child, anim) {
+                            final slide = Tween<Offset>(
+                              begin: const Offset(0.06, 0),
+                              end: Offset.zero,
+                            ).animate(anim);
+                            return FadeTransition(
+                              opacity: anim,
+                              child: SlideTransition(position: slide, child: child),
+                            );
                           },
-                          builder: (context, search) {
-                            final showResults = search.loading || search.committed.trim().isNotEmpty;
-
-                            if (showResults) {
-                              if (search.loading) {
-                                return const Center(child: CircularProgressIndicator());
-                              }
-                              if (search.error != null) {
-                                return Center(
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Text('Error al buscar artículos'),
-                                      const SizedBox(height: 8),
-                                      Text(search.error!, style: const TextStyle(color: Colors.red), textAlign: TextAlign.center),
-                                      const SizedBox(height: 12),
-                                      ElevatedButton(
-                                        onPressed: () => context.read<ArticleSearchCubit>().search(search.committed),
-                                        child: const Text('Reintentar'),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              }
-
-
-
-                              final results = search.results!;
-                              if (results.isEmpty) {
-                                return const Center(child: Text('Sin resultados'));
-                              }
-                              // 👉 Lista de resultados de búsqueda
-                              return ListView.separated(
-                                padding: const EdgeInsets.symmetric(horizontal: 20),
-                                itemCount: results.length,
-                                separatorBuilder: (_, __) => const SizedBox(height: 12),
-                                itemBuilder: (context, i) {
-                                  final r = results[i];
-                                  return _card(
-                                    icon: Icons.article,
-                                    label: r.label,
-                                    color: Colors.blue,
-                                    onTap: () {
-                                      // Abre el detalle directamente (level puede estar en 0)
-                                      context.read<GuiaSectionCubit>().showArticle(
-                                        articleId: r.id,
-                                        articleTitle: r.label,
-                                      );
-                                    },
+                          child: s.showArticleDetail
+                              ? _ArticleDetail(articleId: s.articleId!)
+                              : BlocBuilder<ArticleSearchCubit, ArticleSearchState>(
+                            buildWhen: (prev, curr) {
+                              final sameResults = prev.results.length == curr.results.length &&
+                                  prev.results.asMap().entries.every(
+                                        (e) => e.value.id == curr.results[e.key].id && e.value.label == curr.results[e.key].label,
                                   );
-                                },
-                              );
-                            }
-
-                            // 🔁 Sin query → comportamiento jerárquico original
-                            return FutureBuilder<List<GuiaRow>>(
-                              key: ValueKey('level-${s.level}-${s.key0}-${s.key1}-${s.key2}-${s.key3}-${s.articleId ?? ''}'),
-                              future: _loadRows(s),
-                              builder: (context, snap) {
-                                if (snap.connectionState == ConnectionState.waiting) {
+                              return prev.committed != curr.committed ||
+                                  prev.loading   != curr.loading   ||
+                                  prev.error     != curr.error     ||
+                                  !sameResults;
+                            },
+                            builder: (context, search) {
+                              final showResults = search.loading || search.committed.trim().isNotEmpty;
+        
+                              if (showResults) {
+                                if (search.loading) {
                                   return const Center(child: CircularProgressIndicator());
                                 }
-                                if (snap.hasError) {
+                                if (search.error != null) {
                                   return Center(
                                     child: Column(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        const Text('Ocurrió un error'),
+                                        const Text('Error al buscar artículos'),
                                         const SizedBox(height: 8),
-                                        Text('${snap.error}', style: const TextStyle(color: Colors.red), textAlign: TextAlign.center),
+                                        Text(search.error!, style: const TextStyle(color: Colors.red), textAlign: TextAlign.center),
                                         const SizedBox(height: 12),
                                         ElevatedButton(
-                                          onPressed: () => (context as Element).markNeedsBuild(),
+                                          onPressed: () => context.read<ArticleSearchCubit>().search(search.committed),
                                           child: const Text('Reintentar'),
                                         ),
                                       ],
                                     ),
                                   );
                                 }
-                                final rows = snap.data ?? const <GuiaRow>[];
-                                if (rows.isEmpty) return const Center(child: Text('Sin datos'));
-
-                                return RefreshIndicator(
-                                  onRefresh: () async => (context as Element).markNeedsBuild(),
-                                  child: ListView.separated(
-                                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                                    itemCount: rows.length,
-                                    separatorBuilder: (_, __) => const SizedBox(height: 12),
-                                    itemBuilder: (context, i) {
-                                      final r = rows[i];
-                                      return _card(
-                                        icon: r.icon,
-                                        label: r.label,
-                                        color: Colors.blue,
-                                        onTap: () {
-                                          final cubit = context.read<GuiaSectionCubit>();
-
-                                          if (r.isArticle) {
-                                            // Abrir detalle de artículo (nivel 5)
-                                            cubit.showArticle(articleId: r.id, articleTitle: r.label);
-                                            return;
-                                          }
-
-                                          // No es artículo → navegar al siguiente nivel según el estado actual
-                                          switch (s.level) {
-                                            case 0:
-                                              cubit.openLevel1(key0: r.id, title0: r.label);
-                                              break;
-                                            case 1:
-                                              cubit.openLevel2(key1: r.id, title1: r.label);
-                                              break;
-                                            case 2:
-                                              cubit.openLevel3(key2: r.id, title2: r.label);
-                                              break;
-                                            case 3:
-                                              cubit.openLevel4(key3: r.id, title3: r.label);
-                                              break;
-                                            case 4:
-                                            // si existiera más nivel, acá
-                                              break;
-                                          }
-                                        },
-                                      );
-                                    },
-                                  ),
+        
+        
+        
+                                final results = search.results!;
+                                if (results.isEmpty) {
+                                  return const Center(child: Text('Sin resultados'));
+                                }
+                                // 👉 Lista de resultados de búsqueda
+                                return ListView.separated(
+                                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                                  itemCount: results.length,
+                                  separatorBuilder: (_, __) => const SizedBox(height: 12),
+                                  itemBuilder: (context, i) {
+                                    final r = results[i];
+                                    return _card(
+                                      icon: Icons.article,
+                                      label: r.label,
+                                      color: Colors.blue,
+                                      onTap: () {
+                                        // Abre el detalle directamente (level puede estar en 0)
+                                        context.read<GuiaSectionCubit>().showArticle(
+                                          articleId: r.id,
+                                          articleTitle: r.label,
+                                        );
+                                      },
+                                    );
+                                  },
                                 );
-                              },
-                            );
-                          },
-                        ),
-                      );
-                    },
+                              }
+        
+                              // 🔁 Sin query → comportamiento jerárquico original
+                              return FutureBuilder<List<GuiaRow>>(
+                                key: ValueKey('level-${s.level}-${s.key0}-${s.key1}-${s.key2}-${s.key3}-${s.articleId ?? ''}'),
+                                future: _loadRows(s),
+                                builder: (context, snap) {
+                                  if (snap.connectionState == ConnectionState.waiting) {
+                                    return const Center(child: CircularProgressIndicator());
+                                  }
+                                  if (snap.hasError) {
+                                    return Center(
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Text('Ocurrió un error'),
+                                          const SizedBox(height: 8),
+                                          Text('${snap.error}', style: const TextStyle(color: Colors.red), textAlign: TextAlign.center),
+                                          const SizedBox(height: 12),
+                                          ElevatedButton(
+                                            onPressed: () => (context as Element).markNeedsBuild(),
+                                            child: const Text('Reintentar'),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  }
+                                  final rows = snap.data ?? const <GuiaRow>[];
+                                  if (rows.isEmpty) return const Center(child: Text('Sin datos'));
+        
+                                  return RefreshIndicator(
+                                    onRefresh: () async => (context as Element).markNeedsBuild(),
+                                    child: ListView.separated(
+                                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                                      itemCount: rows.length,
+                                      separatorBuilder: (_, __) => const SizedBox(height: 12),
+                                      itemBuilder: (context, i) {
+                                        final r = rows[i];
+                                        return _card(
+                                          icon: r.icon,
+                                          label: r.label,
+                                          color: Colors.blue,
+                                          onTap: () {
+                                            final cubit = context.read<GuiaSectionCubit>();
+        
+                                            if (r.isArticle) {
+                                              // Abrir detalle de artículo (nivel 5)
+                                              cubit.showArticle(articleId: r.id, articleTitle: r.label);
+                                              return;
+                                            }
+        
+                                            // No es artículo → navegar al siguiente nivel según el estado actual
+                                            switch (s.level) {
+                                              case 0:
+                                                cubit.openLevel1(key0: r.id, title0: r.label);
+                                                break;
+                                              case 1:
+                                                cubit.openLevel2(key1: r.id, title1: r.label);
+                                                break;
+                                              case 2:
+                                                cubit.openLevel3(key2: r.id, title2: r.label);
+                                                break;
+                                              case 3:
+                                                cubit.openLevel4(key3: r.id, title3: r.label);
+                                                break;
+                                              case 4:
+                                              // si existiera más nivel, acá
+                                                break;
+                                            }
+                                          },
+                                        );
+                                      },
+                                    ),
+                                  );
+                                },
+                              );
+                            },
+                          ),
+                        );
+                      },
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -630,9 +680,7 @@ Widget _card({
   required Color color,
   VoidCallback? onTap,
 }) {
-  final child = Container(
-    width: double.infinity,
-    decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(12)),
+  final content = Padding(
     padding: const EdgeInsets.all(20),
     child: Row(
       children: [
@@ -641,7 +689,11 @@ Widget _card({
         Expanded(
           child: Text(
             label,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white),
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+            ),
             overflow: TextOverflow.ellipsis,
           ),
         ),
@@ -650,10 +702,26 @@ Widget _card({
     ),
   );
 
-  return onTap == null
-      ? child
-      : InkWell(borderRadius: BorderRadius.circular(12), onTap: onTap, child: child);
+  final shape = RoundedRectangleBorder(borderRadius: BorderRadius.circular(12));
+
+  // Siempre provee un Material para los Ink effects
+  return Material(
+    color: Colors.transparent,
+    shape: shape,
+    clipBehavior: Clip.antiAlias, // recorta el splash al radio
+    child: InkWell(
+      onTap: onTap,
+      customBorder: shape,
+      child: Ink( // Ink + BoxDecoration = splash correcto
+        decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(12)),
+        child: content,
+      ),
+    ),
+  );
 }
+
+
+
 
 /// Limpia propiedades problemáticas del HTML (opcional)
 String sanitizeFontFeatures(String html) {

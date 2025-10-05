@@ -93,9 +93,16 @@ class _CardBaseState extends State<CardBase> {
   }
 }
 
-class _ArticleCard extends StatelessWidget {
+class _ArticleCard extends StatefulWidget {
   const _ArticleCard({required this.article});
   final PopularArticle article;
+
+  @override
+  State<_ArticleCard> createState() => _ArticleCardState();
+}
+
+class _ArticleCardState extends State<_ArticleCard> {
+  bool isFav = false;
 
   Future<void> _abrirUrl(String url) async {
     final uri = Uri.parse(url);
@@ -106,10 +113,27 @@ class _ArticleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    final cardBg      = isDark ? const Color(0xFF1B1C1E) : Colors.white;
+    final borderColor = isDark ? Colors.white10 : const Color(0xFFEAEAEA);
+    final shadowColor = isDark ? Colors.black.withOpacity(0.65) : Colors.black.withOpacity(0.14);
+    final titleColor  = isDark ? Colors.white : Colors.black87;
+    final metaColor   = isDark ? Colors.grey.shade400 : Colors.grey;
+    final linkColor   = isDark ? Colors.lightBlueAccent : Colors.blueAccent;
+    final chipBg      = isDark ? Colors.white.withOpacity(0.10) : Colors.lightBlueAccent.withOpacity(.25);
+    final chipText    = isDark ? Colors.lightBlue.shade200 : Colors.blue;
+
     return Card(
       elevation: 8,
-      shadowColor: Colors.black.withOpacity(0.15),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      color: cardBg,
+      surfaceTintColor: Colors.transparent,
+      shadowColor: shadowColor,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: borderColor),
+      ),
       clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -121,50 +145,80 @@ class _ArticleCard extends StatelessWidget {
               topRight: Radius.circular(16),
             ),
             child: Image.asset(
-              article.imageAsset,
+              widget.article.imageAsset,
               width: double.infinity,
               height: 100,
               fit: BoxFit.cover,
             ),
           ),
+
           // Contenido
           Container(
-            color: Colors.white,
+            color: cardBg,
             padding: const EdgeInsets.all(16),
             child: Column(
               children: [
-                // Tag + fav
+                // Tag + corazón animado
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: Colors.lightBlueAccent.withOpacity(.25),
+                        color: chipBg,
                         borderRadius: BorderRadius.circular(16),
+                        border: isDark ? Border.all(color: Colors.white12) : null,
                       ),
                       child: Text(
-                        article.tag,
-                        style: const TextStyle(
+                        widget.article.tag,
+                        style: TextStyle(
                           fontSize: 10,
-                          color: Colors.blue,
+                          color: chipText,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
-                    const Icon(Icons.favorite_border, color: Colors.red),
+
+                    // ❤️ Corazón con animación
+                    GestureDetector(
+                      onTap: () {
+                        setState(() => isFav = !isFav);
+                      },
+                      child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 300),
+                        transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: child),
+                        child: isFav
+                            ? Icon(
+                          Icons.favorite,
+                          key: const ValueKey('filled'),
+                          color: Colors.redAccent,
+                          size: 26,
+                        )
+                            : Icon(
+                          Icons.favorite_border,
+                          key: const ValueKey('border'),
+                          color: isDark ? Colors.red.shade200 : Colors.red,
+                          size: 26,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
+
                 const SizedBox(height: 10),
 
                 // Título
                 Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    article.title,
+                    widget.article.title,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontWeight: FontWeight.w800,
+                      color: titleColor,
+                      letterSpacing: -0.15,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -173,38 +227,40 @@ class _ArticleCard extends StatelessWidget {
                 Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    "Por ${article.author}",
+                    "Por ${widget.article.author}",
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Colors.blueAccent,
+                    style: TextStyle(
+                      color: linkColor,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                 ),
                 const SizedBox(height: 12),
 
-                // Fecha + CTA
+                // Fecha + “ver más”
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(article.date, style: const TextStyle(color: Colors.grey)),
+                    Text(widget.article.date, style: TextStyle(color: metaColor)),
                     InkWell(
-                      onTap: () => _abrirUrl(article.url),
+                      onTap: () => _abrirUrl(widget.article.url),
                       borderRadius: BorderRadius.circular(8),
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                         child: Row(
-                          children: const [
+                          children: [
                             Text(
                               "ver más",
                               style: TextStyle(
-                                color: Colors.blueAccent,
+                                color: linkColor,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            SizedBox(width: 4),
-                            Icon(Icons.arrow_forward_ios_rounded,
-                              color: Colors.blueAccent,
+                            const SizedBox(width: 4),
+                            Icon(
+                              Icons.arrow_forward_ios_rounded,
+                              color: linkColor,
                               size: 16,
                             ),
                           ],
@@ -230,6 +286,11 @@ class _DotsIndicator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (count <= 1) return const SizedBox.shrink();
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final active = isDark ? Colors.white : Colors.blue;
+    final idle   = isDark ? Colors.white.withOpacity(.25) : Colors.blue.withOpacity(.25);
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(count, (i) {
@@ -240,7 +301,7 @@ class _DotsIndicator extends StatelessWidget {
           width: isActive ? 14 : 7,
           height: 7,
           decoration: BoxDecoration(
-            color: isActive ? Colors.blue : Colors.blue.withOpacity(.25),
+            color: isActive ? active : idle,
             borderRadius: BorderRadius.circular(8),
           ),
         );

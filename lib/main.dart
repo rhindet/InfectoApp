@@ -8,6 +8,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:infecto_migrado/src/components/article_filter_cubit.dart';
 import 'package:infecto_migrado/src/components/article_search_cubit.dart';
+import 'package:infecto_migrado/src/utils/themecubit.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 
 void main() async {
@@ -15,50 +16,81 @@ void main() async {
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
   await dotenv.load(fileName: ".env");
+
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     // DeviceOrientation.portraitDown, // opcional: permitir cabeza-abajo
   ]);
-  runApp(const MyApp());
-
   Future.delayed(const Duration(milliseconds: 3000), () {
     FlutterNativeSplash.remove(); // quita la splash
   });
+
+  runApp(const MyApp());
+
+
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Infecto App',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.white70),
-        splashFactory: NoSplash.splashFactory,
-        splashColor: Colors.transparent,
-        highlightColor: Colors.transparent,
-        useMaterial3: true,
-      ),
-      // 👇 Envoltorio RESPONSIVE global
-      builder: (context, child) => ResponsiveBreakpoints.builder(
-        child: BouncingScrollWrapper(child: child!),
-        breakpoints: const [
-          Breakpoint(start: 0, end: 360, name: MOBILE),
-          Breakpoint(start: 360, end: 480, name: 'MOBILE_L'),
-          Breakpoint(start: 480, end: 768, name: TABLET),
-          Breakpoint(start: 768, end: 1024, name: DESKTOP),
-          Breakpoint(start: 1024, end: double.infinity, name: 'XL'),
-        ],
-      ),
-      home: MultiBlocProvider(
-        providers: [
-          BlocProvider<CounterCubit>(create: (_) => CounterCubit()),
-          BlocProvider<ChangePageBloc>(create: (_) => ChangePageBloc()),
-          BlocProvider<ArticleSearchCubit>(create: (_) => ArticleSearchCubit()),
-          BlocProvider<ArticleFilterCubit>(create: (_) => ArticleFilterCubit()),
-        ],
-        child: const MyHomePage(),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<CounterCubit>(create: (_) => CounterCubit()),
+        BlocProvider<ChangePageBloc>(create: (_) => ChangePageBloc()),
+        BlocProvider<ArticleSearchCubit>(create: (_) => ArticleSearchCubit()),
+        BlocProvider<ArticleFilterCubit>(create: (_) => ArticleFilterCubit()),
+        BlocProvider<ThemeCubit>(create: (_) => ThemeCubit()), // 👈 nuevo
+      ],
+      child: BlocBuilder<ThemeCubit, bool>(
+        builder: (context, isDark) {
+          return MaterialApp(
+            debugShowCheckedModeBanner: false,
+            title: 'Infecto App',
+            themeMode: isDark ? ThemeMode.dark : ThemeMode.light, // alterna
+            theme: ThemeData(
+              brightness: Brightness.light,
+              colorScheme: ColorScheme.fromSeed(seedColor: Colors.white70, brightness: Brightness.light),
+              scaffoldBackgroundColor: const Color(0xFFF7F9FC),
+              appBarTheme: const AppBarTheme(
+                backgroundColor: Color(0xFFF4F7FA),
+                foregroundColor: Colors.black,
+                elevation: 0,
+              ),
+              useMaterial3: true,
+              splashFactory: NoSplash.splashFactory,
+              splashColor: Colors.transparent,
+              highlightColor: Colors.transparent,
+            ),
+            darkTheme: ThemeData(
+              brightness: Brightness.dark,
+              colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF084C8A), brightness: Brightness.dark),
+              scaffoldBackgroundColor: Color(0xFF12151B), // fondo negro/oscuro
+              appBarTheme: const AppBarTheme(
+                backgroundColor: Color(0xFF0A0B0F), // color del status bar
+                foregroundColor: Colors.white,
+                elevation: 1,
+              ),
+              useMaterial3: true,
+              splashFactory: NoSplash.splashFactory,
+              splashColor: Colors.transparent,
+              highlightColor: Colors.transparent,
+            ),
+            // builder y home como ya los tenías:
+            builder: (context, child) => ResponsiveBreakpoints.builder(
+              child: BouncingScrollWrapper(child: child!),
+              breakpoints: const [
+                Breakpoint(start: 0, end: 360, name: MOBILE),
+                Breakpoint(start: 360, end: 480, name: 'MOBILE_L'),
+                Breakpoint(start: 480, end: 768, name: TABLET),
+                Breakpoint(start: 768, end: 1024, name: DESKTOP),
+                Breakpoint(start: 1024, end: double.infinity, name: 'XL'),
+              ],
+            ),
+            home: const MyHomePage(),
+          );
+        },
       ),
     );
   }
@@ -78,36 +110,65 @@ class _MyHomePageState extends State<MyHomePage> {
     return Scaffold(
       appBar: AppBar(
           title: Container(
-              child: Column(
-                children: [
-                  Row(
-                    spacing: 40,
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      IconButton(
-                        iconSize: 30,
-                        icon: const Icon(Icons.menu),
-                        onPressed: (){
-                          showSideModal(context);
-                        },
-                      ),
-                      Image.asset(
-                        'assets/infecto_logo_sin_fondo.png',
-                        width: 120,
-                        height: 40,
-                      ),
-                      IconButton(
-                        iconSize: 30,
-                        icon: const Icon(Icons.dark_mode),
-                        onPressed: (){
-                          // TODO: toggle tema
-                        },
-                      ),
-                    ],
-                  ),
-                ],
-              )
+            child: Column(
+              children: [
+                Row(
+                  spacing: 40,
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // Botón de menú lateral
+                    IconButton(
+                      iconSize: 30,
+                      icon: const Icon(Icons.menu),
+                      onPressed: () {
+                        showSideModal(context);
+                      },
+                    ),
+
+                    // Logo dinámico según tema
+                    BlocBuilder<ThemeCubit, bool>(
+                      builder: (context, isDark) {
+                        return Image.asset(
+                          isDark
+                              ? 'assets/infecto_logo_blanco.png' // 👈 Logo para modo oscuro
+                              : 'assets/infecto_logo_sin_fondo.png', // 👈 Logo para modo claro
+                          width: 120,
+                          height: 40,
+                        );
+                      },
+                    ),
+
+                    // Botón animado de cambio de tema
+                    BlocBuilder<ThemeCubit, bool>(
+                      builder: (context, isDark) {
+                        return IconButton(
+                          iconSize: 30,
+                          onPressed: () => context.read<ThemeCubit>().toggle(),
+                          icon: AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 350),
+                            switchInCurve: Curves.easeOutCubic,
+                            switchOutCurve: Curves.easeInCubic,
+                            transitionBuilder: (child, anim) {
+                              return RotationTransition(
+                                turns: Tween<double>(begin: 0.75, end: 1.0).animate(anim),
+                                child: FadeTransition(opacity: anim, child: child),
+                              );
+                            },
+                            child: isDark
+                                ? const Icon(Icons.wb_sunny,
+                                key: ValueKey('sun'), color: Colors.amber)
+                                : const Icon(Icons.dark_mode,
+                                key: ValueKey('moon'), color: Colors.black87),
+                          ),
+                          tooltip: isDark ? 'Tema claro' : 'Tema oscuro',
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ],
+            ),
           )
       ),
       body: const BottomTabNavegator(),

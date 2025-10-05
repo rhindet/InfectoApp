@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:infecto_migrado/src/views/GuiaView.dart';
 import 'CardBase.dart';
 import 'package:auto_size_text/auto_size_text.dart';
 
@@ -10,8 +11,37 @@ class InicioView extends StatefulWidget {
 }
 
 class _InicioViewState extends State<InicioView> {
+  bool _showGuia = false;
+  String? _nivel0Id;
+  String? _nivel0Title;
+
   @override
   Widget build(BuildContext context) {
+    if (_showGuia) {
+      return WillPopScope(
+        onWillPop: () async {
+          setState(() {
+            _showGuia = false;
+            _nivel0Id = null;
+            _nivel0Title = null;
+          });
+          return false; // consume back to volver al inicio
+        },
+        child: GuiaView(
+          initialKey0: _nivel0Id,
+          initialTitle0: _nivel0Title,
+          exitToParentWhenBackFromLevel1: true,
+          onExit: () {
+            setState(() {
+              _showGuia = false;
+              _nivel0Id = null;
+              _nivel0Title = null;
+            });
+          },
+        ),
+      );
+    }
+
     return SingleChildScrollView(
       child: Container(
         padding: const EdgeInsets.only(bottom: 16),
@@ -20,18 +50,29 @@ class _InicioViewState extends State<InicioView> {
           children: [
             // 🔹 Aquí decides qué diseño mostrar
             //_buildQuickLinks(),                // 3 en fila (claro)
-            _buildQuickLinksAlt(),             // 3 en fila (azul alternativo)
+            _buildQuickLinksAlt(context),             // 3 en fila (azul alternativo)
             //_buildQuickLinksRect(),            // Rectangulares outlined (2 columnas)
-           // _buildQuickLinksRectFilled(),      // Rectangulares filled azul (2 columnas)
-           // _buildQuickLinksExtended(),        // Rectangulares extendidos con descripción
-             SizedBox(height: 10),
+            // _buildQuickLinksRectFilled(),      // Rectangulares filled azul (2 columnas)
+            // _buildQuickLinksExtended(),        // Rectangulares extendidos con descripción
+            const SizedBox(height: 10),
             _buildTitulo(),
-             SizedBox(height: 10),
+            const SizedBox(height: 10),
             _buildCardBase(),
           ],
         ),
       ),
     );
+  }
+
+  // ---------- helper de navegación ----------
+  VoidCallback _openGuia({required String id, required String title}) {
+    return () {
+      setState(() {
+        _showGuia = true;
+        _nivel0Id = id;
+        _nivel0Title = title;
+      });
+    };
   }
 
   // ---------- Funciones para cada sección ----------
@@ -78,42 +119,9 @@ class _InicioViewState extends State<InicioView> {
     return CardBase(articles: articles);
   }
 
-  // ====== Cuadrados claros (3 por fila) ======
-  Widget _buildQuickLinks() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 5),
-          child: Text("Accesos rápidos",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-        ),
-        const SizedBox(height: 10),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 5),
-          child: GridView.count(
-            crossAxisCount: 3,
-            mainAxisSpacing: 10,
-            crossAxisSpacing: 10,
-            childAspectRatio: 1.2,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            children: const [
-              _QuickLinkTile(label: "Fármacos", imageAsset: "assets/medicamento.png", onTap: _noop),
-              _QuickLinkTile(label: "Patógenos", imageAsset:"assets/pateogeno.png", onTap: _noop),
-              _QuickLinkTile(label: "Vacunas",  imageAsset:"assets/jeringuilla.png", onTap: _noop),
-              _QuickLinkTile(label: "Sindromes",  imageAsset:"assets/sindrome-de-down.png", onTap: _noop),
-              _QuickLinkTile(label: "Prevencion y control de infecciones",  imageAsset:"assets/escudo-con-simbolo-de-hospital.png", onTap: _noop),
-              //_QuickLinkTile(label: "Guías", icon: Icons.menu_book_outlined, onTap: _noop),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
+  // ======  claros (3 por fila) ===
   // ====== Cuadrados azules (3 por fila) ======
-  Widget _buildQuickLinksAlt() {
+  Widget _buildQuickLinksAlt(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -132,138 +140,55 @@ class _InicioViewState extends State<InicioView> {
             childAspectRatio: 1.3,
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            children: const [
-              _QuickLinkTileAlt(label: "Fármacos", imageAsset: "assets/medicamento.png", onTap: _noop),
-              _QuickLinkTileAlt(label: "Patógenos", imageAsset:"assets/patogeno.png", onTap: _noop),
-              _QuickLinkTileAlt(label: "Vacunas",  imageAsset:"assets/jeringuilla.png", onTap: _noop),
-              _QuickLinkTileAlt(label: "Sindromes",  imageAsset:"assets/sindrome-de-down.png", onTap: _noop),
-              _QuickLinkTileAlt(label: "Prevencion y control de infecciones",  imageAsset:"assets/escudo-con-simbolo-de-hospital.png", onTap: _noop),
-             // _QuickLinkTileAlt(label: "Farmacología", icon: Icons.science_outlined, onTap: _noop),
+            children: [
+              _QuickLinkTileAlt(
+                label: "Fármacos",
+                imageAsset: "assets/medicamento.png",
+                onTap: _openGuia(
+                  id: "6894d03ee9a3f97d9bb6e675",
+                  title: "Fármacos",
+                ),
+              ),
+              _QuickLinkTileAlt(
+                label: "Patógenos",
+                imageAsset: "assets/patogeno.png",
+                onTap: _openGuia(
+                  id: "6894d07ae9a3f97d9bb6e691",
+                  title: "Patógenos",
+                ),
+              ),
+              _QuickLinkTileAlt(
+                label: "Vacunas",
+                imageAsset: "assets/jeringuilla.png",
+                onTap: _openGuia(
+                  id: "68a00747032b33094787d4a0",
+                  title: "Vacunas",
+                ),
+              ),
+              _QuickLinkTileAlt(
+                label: "Síndromes",
+                imageAsset: "assets/sindrome-de-down.png",
+                onTap: _openGuia(
+                  id: "68a00779032b33094787d4a1",
+                  title: "Síndromes",
+                ),
+              ),
+              _QuickLinkTileAlt(
+                label: "Prevención y control\nde infecciones",
+                imageAsset: "assets/escudo-con-simbolo-de-hospital.png",
+                onTap: _openGuia(
+                  id: "68a007a0032b33094787d4a2",
+                  title: "Prevención y control de infecciones",
+                ),
+              ),
             ],
           ),
-        ),
-      ],
-    );
-  }
-
-  // ====== Rectangulares OUTLINED (2 por fila) ======
-  Widget _buildQuickLinksRect() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SizedBox(height: 24),
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 5),
-          child: Text(
-            "Accesos rápidos (rectangular — outlined)",
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-          ),
-        ),
-        const SizedBox(height: 10),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 5),
-          child: GridView.count(
-            crossAxisCount: 2,
-            mainAxisSpacing: 10,
-            crossAxisSpacing: 10,
-            childAspectRatio: 3.2,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            children: const [
-              _QuickLinkRect(label: "Triage Rápido", icon: Icons.local_hospital_outlined, onTap: _noop),
-              _QuickLinkRect(label: "Guías Clínicas", icon: Icons.menu_book_outlined, onTap: _noop),
-              _QuickLinkRect(label: "Farmacología", icon: Icons.science_outlined, onTap: _noop),
-              _QuickLinkRect(label: "Laboratorio", icon: Icons.biotech_outlined, onTap: _noop),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  // ====== Rectangulares FILLED (2 por fila) ======
-  Widget _buildQuickLinksRectFilled() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SizedBox(height: 24),
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 5),
-          child: Text(
-            "Accesos rápidos (rectangular — filled)",
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-          ),
-        ),
-        const SizedBox(height: 10),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 5),
-          child: GridView.count(
-            crossAxisCount: 2,
-            mainAxisSpacing: 10,
-            crossAxisSpacing: 10,
-            childAspectRatio: 3.2,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            children: const [
-              _QuickLinkRectFilled(label: "Protocolos", icon: Icons.rule_folder_outlined, onTap: _noop),
-              _QuickLinkRectFilled(label: "Imágenes", icon: Icons.image_search_outlined, onTap: _noop),
-              _QuickLinkRectFilled(label: "Vacunación", icon: Icons.vaccines_outlined, onTap: _noop),
-              _QuickLinkRectFilled(label: "Telemedicina", icon: Icons.videocam_outlined, onTap: _noop),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  // ====== Rectangulares EXTENDIDOS (con descripción) ======
-  Widget _buildQuickLinksExtended() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: const [
-        SizedBox(height: 24),
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: 5),
-          child: Text(
-            "Accesos rápidos (extended — con descripción)",
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-          ),
-        ),
-        SizedBox(height: 10),
-        _QuickLinkRectExtended(
-          label: "Consulta Médica",
-          description: "Accede a consultas generales y especialistas en línea.",
-          icon: Icons.safety_check,
-          onTap: _noop,
-        ),
-        SizedBox(height: 10),
-        _QuickLinkRectExtended(
-          label: "Resultados de Laboratorio",
-          description: "Descarga y consulta tus resultados de análisis clínicos.",
-          icon: Icons.analytics_outlined,
-          onTap: _noop,
-        ),
-        SizedBox(height: 10),
-        _QuickLinkRectFilledExtended(
-          label: "Historial Clínico",
-          description: "Revisa tu expediente médico y notas anteriores.",
-          icon: Icons.folder_shared_outlined,
-          onTap: _noop,
-        ),
-        SizedBox(height: 10),
-        _QuickLinkRectFilledExtended(
-          label: "Videoconsulta",
-          description: "Conéctate con un médico desde la comodidad de tu casa.",
-          icon: Icons.video_call_outlined,
-          onTap: _noop,
         ),
       ],
     );
   }
 }
 
-// ===== util =====
-void _noop() {}
 
 /// ---------- Cuadrado claro ----------
 class _QuickLinkTile extends StatelessWidget {
@@ -303,7 +228,6 @@ class _QuickLinkTile extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // 🔹 Imagen en lugar del ícono
             Container(
               width: 40,
               height: 40,

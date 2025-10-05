@@ -5,19 +5,29 @@ import 'package:url_launcher/url_launcher.dart';
 class ContactCard extends StatelessWidget {
   const ContactCard({super.key});
 
-  // Colores de marca
+  // Colores de marca (base)
   static const Color primary = Color(0xFF1E6BB8);
   static const Color primarySoft = Color(0xFFE9F2FB);
 
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // 🎨 Paleta adaptativa
+    final cardBg        = isDark ? const Color(0xFF161A20) : Colors.white;
+    final cardShadow    = isDark ? Colors.black45 : Colors.black.withOpacity(0.15);
+    final headerBg      = isDark ? const Color(0x1A1E6BB8) : primarySoft; // sutil en dark
+    final titleColor    = isDark ? Colors.white : Colors.black87;
+    final subtitleColor = isDark ? Colors.white70 : Colors.black54;
+    final dividerColor  = isDark ? Colors.white12 : Colors.black12;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Material(
         elevation: 8,
-        color: Colors.white,
+        color: cardBg,
+        shadowColor: cardShadow,
         borderRadius: BorderRadius.circular(20),
         clipBehavior: Clip.antiAlias,
         child: Column(
@@ -27,7 +37,7 @@ class ContactCard extends StatelessWidget {
             Container(
               width: double.infinity,
               padding: const EdgeInsets.fromLTRB(20, 18, 20, 16),
-              color: primarySoft,
+              color: headerBg,
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -65,16 +75,17 @@ class ContactCard extends StatelessWidget {
                     onTap: () => _call('8110061414'),
                     trailing: Column(
                       children: [
-
                         _QuickAction(
                           label: 'Llamar',
                           icon: Icons.phone,
                           onTap: () => _call('8110061414'),
                         ),
                       ],
-                    )
+                    ),
+                    titleColor: titleColor,
+                    subtitleColor: subtitleColor,
                   ),
-                  const Divider(height: 20),
+                  Divider(height: 20, color: dividerColor),
                   _ContactRow(
                     icon: Icons.call_outlined,
                     title: 'Consulta',
@@ -85,8 +96,10 @@ class ContactCard extends StatelessWidget {
                       icon: Icons.phone,
                       onTap: () => _call('83891111'),
                     ),
+                    titleColor: titleColor,
+                    subtitleColor: subtitleColor,
                   ),
-                  const Divider(height: 20),
+                  Divider(height: 20, color: dividerColor),
                   _ContactRow(
                     icon: Icons.mail_outline,
                     title: 'Laboratorio',
@@ -97,8 +110,10 @@ class ContactCard extends StatelessWidget {
                       icon: Icons.outgoing_mail,
                       onTap: () => _email('labinfectohu@gmail.com'),
                     ),
+                    titleColor: titleColor,
+                    subtitleColor: subtitleColor,
                   ),
-                  const Divider(height: 20),
+                  Divider(height: 20, color: dividerColor),
                   _ContactRow(
                     icon: Icons.mark_email_read_outlined,
                     title: 'Resultados',
@@ -109,6 +124,8 @@ class ContactCard extends StatelessWidget {
                       icon: Icons.outgoing_mail,
                       onTap: () => _email('resultadoslabinfecto@gmail.com'),
                     ),
+                    titleColor: titleColor,
+                    subtitleColor: subtitleColor,
                   ),
                 ],
               ),
@@ -156,6 +173,8 @@ class _ContactRow extends StatelessWidget {
     required this.subtitle,
     this.trailing,
     this.onTap,
+    required this.titleColor,
+    required this.subtitleColor,
   });
 
   final IconData icon;
@@ -163,10 +182,15 @@ class _ContactRow extends StatelessWidget {
   final String subtitle;
   final Widget? trailing;
   final VoidCallback? onTap;
+  final Color titleColor;
+  final Color subtitleColor;
 
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final iconBoxBg = isDark ? const Color(0x1A1E6BB8) : ContactCard.primarySoft;
 
     return InkWell(
       onTap: onTap,
@@ -178,12 +202,12 @@ class _ContactRow extends StatelessWidget {
             width: 38,
             height: 38,
             decoration: BoxDecoration(
-              color: ContactCard.primarySoft,
+              color: iconBoxBg,
               borderRadius: BorderRadius.circular(10),
             ),
             alignment: Alignment.center,
-            child: const Icon(Icons.call_outlined, color: ContactCard.primary),
-          ).withIcon(icon), // extensión definida abajo
+            child: Icon(icon, color: ContactCard.primary),
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -192,12 +216,12 @@ class _ContactRow extends StatelessWidget {
                 Text(title,
                     style: text.labelLarge?.copyWith(
                       fontWeight: FontWeight.w700,
-                      color: Colors.black87,
+                      color: titleColor,
                     )),
                 const SizedBox(height: 2),
                 Text(subtitle,
                     style: text.bodyMedium?.copyWith(
-                      color: Colors.black54,
+                      color: subtitleColor,
                       height: 1.2,
                     )),
               ],
@@ -205,9 +229,10 @@ class _ContactRow extends StatelessWidget {
           ),
           if (trailing != null)
             Padding(
-              padding: const EdgeInsets.only(left: 10), // 🔹 espacio entre texto y botón
+              padding: const EdgeInsets.only(left: 10),
               child: trailing,
-            ),        ],
+            ),
+        ],
       ),
     );
   }
@@ -221,17 +246,22 @@ class _QuickAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final bg = isDark ? const Color(0x1A1E6BB8) : ContactCard.primarySoft; // sutil en oscuro
+    final fg = ContactCard.primary;
+
     return TextButton.icon(
       onPressed: onTap,
       style: TextButton.styleFrom(
-        foregroundColor: ContactCard.primary,
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6), // 👈 menos padding
-        minimumSize: const Size(0, 36), // 👈 altura mínima segura
-        tapTargetSize: MaterialTapTargetSize.shrinkWrap, // 👈 evita espacio extra
+        foregroundColor: fg,
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        minimumSize: const Size(0, 36),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        backgroundColor: ContactCard.primarySoft,
+        backgroundColor: bg,
       ),
-      icon: Icon(icon, size: 16), // 👈 ícono un poco más chico
+      icon: Icon(icon, size: 16),
       label: Text(
         label,
         style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
@@ -276,13 +306,16 @@ class _SocialChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bg = isDark ? const Color(0x1A1E6BB8) : ContactCard.primarySoft; // fondo del chip
+
     return InkWell(
       borderRadius: BorderRadius.circular(30),
       onTap: onTap,
       child: Ink(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: ContactCard.primarySoft,
+          color: bg,
           borderRadius: BorderRadius.circular(30),
         ),
         child: Row(
@@ -304,29 +337,19 @@ class _SocialChip extends StatelessWidget {
   }
 }
 
-/// ---- Pequeña extensión para reutilizar el contenedor de icono ----
-extension _IconBox on Widget {
-  Widget withIcon(IconData icon) {
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        this,
-        Icon(icon, color: ContactCard.primary),
-      ],
-    );
-  }
-}
-
 class _Pill extends StatelessWidget {
   final String text;
   const _Pill({required this.text});
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bg = isDark ? const Color(0x1A1E6BB8) : ContactCard.primary.withOpacity(0.1);
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: ContactCard.primary.withOpacity(0.1),
+        color: bg,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:infecto_migrado/src/components/table_vacunacion.dart';
+import 'CalculadoraView.dart';
 import 'InicioView.dart';
 import 'ContactoView.dart';
 import 'ChangePageBloc.dart';
@@ -47,7 +48,7 @@ class _BottomTabNavegatorState extends State<BottomTabNavegator> {
     return Container(
       child: BlocListener<ChangePageBloc, int>(
         listener: (context, state) {
-          // ✅ permite navegar a cualquier página válida (0.._totalPages-1)
+          // permite navegar a cualquier página válida (0.._totalPages-1)
           if (state >= 0 && state < _totalPages) {
             pageController.jumpToPage(state);
           }
@@ -69,17 +70,27 @@ class _BottomTabNavegatorState extends State<BottomTabNavegator> {
                   SearchBarCustomed(
                     controller: _searchCtl,
                     onChanged: (text) {
-                      // Solo guardas el borrador; NO busques ni limpies aquí.
                       context.read<ArticleSearchCubit>().setQuery(text);
                     },
                     onSubmitted: (text) {
-                      context.read<ArticleSearchCubit>().search(text); // buscar al confirmar
+                      final q = text.trim();
+                      if (q.isEmpty) return;
+
+                      // 1) Cerrar teclado (opcional pero recomendable)
+                      FocusScope.of(context).unfocus();
+
+                      // 2) Ir a la pestaña "Guía"
+                      context.read<ChangePageBloc>().add(CambiarPagina(0));
+
+                      // 3) Ejecutar la búsqueda una vez montada la vista
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        final search = context.read<ArticleSearchCubit>();
+                        search.setQuery(q);
+                        search.search(q);
+                      });
                     },
                     onClear: () {
-                      // Se ejecuta tanto al tocar la X como al borrar todo manualmente
-                      // Si usabas filtro local:
-                      // context.read<ArticleFilterCubit>().updateQuery('');
-                      context.read<ArticleSearchCubit>().clear(); // limpia query, committed y results
+                      context.read<ArticleSearchCubit>().clear();
                     },
                   ),
                   Expanded(
@@ -89,7 +100,7 @@ class _BottomTabNavegatorState extends State<BottomTabNavegator> {
                       children: [
                         Center(child: BaseAlignment(child: GuiaView())),
                         BaseAlignment(child: InicioView()),
-                        const Center(child: Text("Calculadora")),
+                        BaseAlignment(child: CalculadoraView()),
                         Center(child: BaseAlignment(child: TableVacunacion())),
                         BaseAlignment(child: ContactCard()),
                         // Center(child: ContactoView()),
@@ -126,7 +137,19 @@ class _BottomTabNavegatorState extends State<BottomTabNavegator> {
                           : _BottomBar(
                         key: const ValueKey('shown'),
                         currentIndex: currentIndexForBottomNav,
-                        onTap: (i) => context.read<ChangePageBloc>().add(CambiarPagina(i)),
+                        onTap: (i) {
+                          // Cerrar teclado
+                          FocusScope.of(context).unfocus();
+
+                          // Limpiar el campo de búsqueda
+                          _searchCtl.clear();
+
+                          //  Notificar al cubit que también limpie la búsqueda
+                          context.read<ArticleSearchCubit>().clear();
+
+                          //. Cambiar de página
+                          context.read<ChangePageBloc>().add(CambiarPagina(i));
+                        },
                         buildTabIcon: _buildTabIcon,
                       ),
                     );

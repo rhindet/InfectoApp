@@ -18,7 +18,7 @@ class _TableVacunacionState extends State<TableVacunacion> with TickerProviderSt
   final GlobalKey _botoneraKey = GlobalKey(); // clave para posicionar el snackbar
   int _currentIndex = 0;
 
-  // 🎨 Paleta
+  // 🎨 Paleta base (modo claro)
   static const Color kPrimary      = Color(0xFF146EB4);
   static const Color kPrimaryLight = Color(0xFF4A90E2);
   static const Color kPrimaryDark  = Color(0xFF407EBD);
@@ -26,8 +26,8 @@ class _TableVacunacionState extends State<TableVacunacion> with TickerProviderSt
   static const Color kIndicatorOff = Color(0xFFC9D3EA);
 
   final List<String> _images = const [
-    'assets/tabla_vacunacion_1.jpg',
     'assets/tabla_vacunacion_2.png',
+    'assets/tabla_vacunacion_1.jpg',
     'assets/tabla_vacunacion_3.png',
     'assets/tabla_vacunacion_4.png',
   ];
@@ -130,7 +130,6 @@ class _TableVacunacionState extends State<TableVacunacion> with TickerProviderSt
   }
 
   Future<void> _descargarImagen() async {
-
     var status = await Permission.storage.request();
     if (!status.isGranted) {
       _mostrarSnackBar("Permiso de almacenamiento denegado", esError: true);
@@ -168,12 +167,31 @@ class _TableVacunacionState extends State<TableVacunacion> with TickerProviderSt
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // Colores dependientes de tema
+    final bgSoft = isDark ? const Color(0xFF0F1115) : kSoftBg;
+    final titleStyle = Theme.of(context).textTheme.titleMedium?.copyWith(
+      fontSize: 18,
+      fontWeight: FontWeight.w800,
+      color: isDark ? Colors.white : Colors.black,
+    );
+
+    final indicatorActive = isDark ? Colors.lightBlueAccent : kPrimaryLight;
+    final indicatorIdle   = isDark ? Colors.white24 : kIndicatorOff;
+
+    // Botones circulares - colores dependientes de tema
+    final buttonBg     = isDark ? const Color(0xFF1E1E1E) : Colors.white;
+    final buttonBorder = isDark ? Colors.white24 : kPrimaryLight.withOpacity(0.25);
+    final iconColor    = isDark ? Colors.lightBlueAccent : kPrimary;
+    final splashColor  = (isDark ? Colors.lightBlueAccent : kPrimary).withOpacity(0.12);
+
     return Column(
       children: [
-        const Text(
+        Text(
           'Esquema Nacional de Vacunación',
           textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+          style: titleStyle,
         ),
 
         Expanded(
@@ -185,7 +203,7 @@ class _TableVacunacionState extends State<TableVacunacion> with TickerProviderSt
               final path = _images[index].replaceAll('"', '').trim();
               return Container(
                 alignment: Alignment.center,
-                color: kSoftBg,
+                color: bgSoft,
                 child: Image.asset(
                   path,
                   fit: BoxFit.contain,
@@ -210,7 +228,7 @@ class _TableVacunacionState extends State<TableVacunacion> with TickerProviderSt
               height: 6,
               width: selected ? 18 : 6,
               decoration: BoxDecoration(
-                color: selected ? kPrimaryLight : kIndicatorOff,
+                color: selected ? indicatorActive : indicatorIdle,
                 borderRadius: BorderRadius.circular(999),
               ),
             );
@@ -221,7 +239,7 @@ class _TableVacunacionState extends State<TableVacunacion> with TickerProviderSt
 
         // 🔑 Botonera con key para posicionar el snackbar
         Container(
-          margin: EdgeInsets.only(bottom: 15),
+          margin: const EdgeInsets.only(bottom: 15),
           child: Row(
             key: _botoneraKey,
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -229,23 +247,26 @@ class _TableVacunacionState extends State<TableVacunacion> with TickerProviderSt
               _IconButtonCircle(
                 icon: CupertinoIcons.fullscreen,
                 onTap: _ampliarImagen,
-                iconColor: kPrimary,
-                splashColor: kPrimary.withOpacity(0.12),
-                borderColor: kPrimaryLight.withOpacity(0.25),
+                materialColor: buttonBg,
+                iconColor: iconColor,
+                splashColor: splashColor,
+                borderColor: buttonBorder,
               ),
               _IconButtonCircle(
                 icon: CupertinoIcons.arrow_down_circle,
                 onTap: _descargarImagen,
-                iconColor: kPrimary,
-                splashColor: kPrimary.withOpacity(0.12),
-                borderColor: kPrimaryLight.withOpacity(0.25),
+                materialColor: buttonBg,
+                iconColor: iconColor,
+                splashColor: splashColor,
+                borderColor: buttonBorder,
               ),
               _IconButtonCircle(
                 icon: CupertinoIcons.globe,
                 onTap: _abrirEnChrome,
-                iconColor: kPrimary,
-                splashColor: kPrimary.withOpacity(0.12),
-                borderColor: kPrimaryLight.withOpacity(0.25),
+                materialColor: buttonBg,
+                iconColor: iconColor,
+                splashColor: splashColor,
+                borderColor: buttonBorder,
               ),
             ],
           ),
@@ -275,7 +296,7 @@ class _SnackContent extends StatelessWidget {
       child: ConstrainedBox(
         constraints: BoxConstraints(maxWidth: width),
         child: Container(
-          padding:  EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
             gradient: gradient,
             color: esError ? Colors.red.shade700 : null,
@@ -311,6 +332,9 @@ class _SnackContent extends StatelessWidget {
 class _IconButtonCircle extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
+
+  // ahora todos los colores son parametrizables (y ya los enviamos desde arriba)
+  final Color materialColor;
   final Color iconColor;
   final Color splashColor;
   final Color borderColor;
@@ -318,6 +342,7 @@ class _IconButtonCircle extends StatelessWidget {
   const _IconButtonCircle({
     required this.icon,
     required this.onTap,
+    this.materialColor = Colors.white,
     this.iconColor = const Color(0xFF146EB4),
     this.splashColor = const Color(0x20146EB4),
     this.borderColor = const Color(0x40146EB4),
@@ -326,7 +351,7 @@ class _IconButtonCircle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.white,
+      color: materialColor,
       shape: const CircleBorder(),
       elevation: 2,
       child: InkWell(
