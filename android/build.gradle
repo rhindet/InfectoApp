@@ -1,3 +1,7 @@
+// android/build.gradle (raíz)
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import com.android.build.gradle.LibraryExtension
+
 allprojects {
     repositories {
         google()
@@ -6,6 +10,59 @@ allprojects {
 }
 
 rootProject.buildDir = "../build"
+
+// ===== Autoinyección de namespace si falta (AGP 8+) =====
+subprojects { subproject ->
+    afterEvaluate {
+        if (plugins.hasPlugin("com.android.library")) {
+            def hasNs = false
+            try { hasNs = subproject.android.namespace != null } catch (Throwable ignored) {}
+            if (!hasNs) {
+                def groupPart = (subproject.group ?: "com.generated").toString()
+                def namePart  = (subproject.name ?: "library").toString().replace('-', '_')
+                def ns = "${groupPart}.${namePart}".toLowerCase()
+                println("⚙️  Inyectando namespace '${ns}' en módulo: ${subproject.path}")
+                subproject.android.namespace = ns
+            }
+        }
+    }
+}
+
+// ===== Parche específico para :image_gallery_saver =====
+project(':image_gallery_saver') {
+    afterEvaluate {
+
+        // 1) Forzar SOLO este módulo a Java/Kotlin 17
+        tasks.withType(KotlinCompile).configureEach {
+            kotlinOptions {
+                jvmTarget = "17"
+            }
+        }
+        tasks.withType(JavaCompile).configureEach {
+            options.release = 17
+            sourceCompatibility = JavaVersion.VERSION_17
+            targetCompatibility = JavaVersion.VERSION_17
+        }
+        def lib = extensions.findByType(LibraryExtension)
+        if (lib != null) {
+            lib.compileOptions.sourceCompatibility = JavaVersion.VERSION_17
+            lib.compileOptions.targetCompatibility = JavaVersion.VERSION_17
+        }
+
+        // 2) Quitar package="..." del manifest del plugin (AGP 8 ya no lo permite)
+        def manifestFile = new File(projectDir, "src/main/AndroidManifest.xml")
+        if (manifestFile.exists()) {
+            def original = manifestFile.getText("UTF-8")
+            def patched  = original.replaceAll(/package="[^"]*"/, "")
+            if (patched != original) {
+                println("🩹 Eliminando package=\"...\" de ${manifestFile}")
+                manifestFile.write(patched, "UTF-8")
+            }
+        }
+    }
+}
+
+// (opcional) directorios de build unificados
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
 }
@@ -13,6 +70,7 @@ subprojects {
     project.evaluationDependsOn(":app")
 }
 
+// tarea clean
 tasks.register("clean", Delete) {
     delete rootProject.buildDir
 }
