@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
+import 'package:infecto_migrado/src/components/terminos.y.condiciones.dart';
+import 'package:infecto_migrado/src/core/controllers/TermsService.dart';
+import 'package:responsive_framework/responsive_framework.dart';
+
 import 'package:infecto_migrado/src/components/CounterCubit.dart';
 import 'package:infecto_migrado/src/components/BottomTabNavegator.dart';
 import 'package:infecto_migrado/src/components/ChangePageBloc.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:infecto_migrado/src/components/article_filter_cubit.dart';
 import 'package:infecto_migrado/src/components/article_search_cubit.dart';
 import 'package:infecto_migrado/src/utils/themecubit.dart';
-import 'package:responsive_framework/responsive_framework.dart';
 
 void main() async {
   final widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
@@ -19,15 +22,13 @@ void main() async {
 
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
-    // DeviceOrientation.portraitDown, // opcional: permitir cabeza-abajo
   ]);
+
   Future.delayed(const Duration(milliseconds: 3000), () {
-    FlutterNativeSplash.remove(); // quita la splash
+    FlutterNativeSplash.remove();
   });
 
   runApp(const MyApp());
-
-
 }
 
 class MyApp extends StatelessWidget {
@@ -41,14 +42,15 @@ class MyApp extends StatelessWidget {
         BlocProvider<ChangePageBloc>(create: (_) => ChangePageBloc()),
         BlocProvider<ArticleSearchCubit>(create: (_) => ArticleSearchCubit()),
         BlocProvider<ArticleFilterCubit>(create: (_) => ArticleFilterCubit()),
-        BlocProvider<ThemeCubit>(create: (_) => ThemeCubit()), // 👈 nuevo
+        BlocProvider<ThemeCubit>(create: (_) => ThemeCubit()),
       ],
       child: BlocBuilder<ThemeCubit, bool>(
         builder: (context, isDark) {
           return MaterialApp(
             debugShowCheckedModeBanner: false,
-            title: 'Infecto App',
-            themeMode: isDark ? ThemeMode.dark : ThemeMode.light, // alterna
+            // 👇 cambia el título de la app aquí
+            title: 'Terapía antimicrobiana Hu',
+            themeMode: isDark ? ThemeMode.dark : ThemeMode.light,
             theme: ThemeData(
               brightness: Brightness.light,
               colorScheme: ColorScheme.fromSeed(seedColor: Colors.white70, brightness: Brightness.light),
@@ -66,9 +68,9 @@ class MyApp extends StatelessWidget {
             darkTheme: ThemeData(
               brightness: Brightness.dark,
               colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF084C8A), brightness: Brightness.dark),
-              scaffoldBackgroundColor: Color(0xFF12151B), // fondo negro/oscuro
+              scaffoldBackgroundColor: const Color(0xFF12151B),
               appBarTheme: const AppBarTheme(
-                backgroundColor: Color(0xFF0A0B0F), // color del status bar
+                backgroundColor: Color(0xFF0A0B0F),
                 foregroundColor: Colors.white,
                 elevation: 1,
               ),
@@ -77,7 +79,6 @@ class MyApp extends StatelessWidget {
               splashColor: Colors.transparent,
               highlightColor: Colors.transparent,
             ),
-            // builder y home como ya los tenías:
             builder: (context, child) => ResponsiveBreakpoints.builder(
               child: BouncingScrollWrapper(child: child!),
               breakpoints: const [
@@ -88,7 +89,8 @@ class MyApp extends StatelessWidget {
                 Breakpoint(start: 1024, end: double.infinity, name: 'XL'),
               ],
             ),
-            home: const MyHomePage(),
+            // 👇 Puerta de acceso: muestra T&C si no se han aceptado
+            home: const _LaunchGate(),
           );
         },
       ),
@@ -96,6 +98,49 @@ class MyApp extends StatelessWidget {
   }
 }
 
+/// Decide si mostrar T&C o la app
+class _LaunchGate extends StatelessWidget {
+  const _LaunchGate();
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<bool>(
+      future: TermsService.isAccepted(),
+      builder: (context, snap) {
+        if (!snap.hasData) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        final accepted = snap.data!;
+        if (accepted) {
+          return const MyHomePage();
+        }
+
+        // Bloquea “back” para no saltar sin aceptar (opcional)
+        return WillPopScope(
+          onWillPop: () async => false,
+          child: TermsAndConditionsView(
+            //  personaliza si hace falta:
+            contactEmail: 'legal@hu.uanl.mx',
+            lastUpdated: '03/10/2025',
+            onAccept: () async {
+              await TermsService.accept();
+              if (context.mounted) {
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(builder: (_) => const MyHomePage()),
+                );
+              }
+            },
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// Tu Home original (no lo toqué)
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key});
 
@@ -117,7 +162,6 @@ class _MyHomePageState extends State<MyHomePage> {
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    // Botón de menú lateral
                     IconButton(
                       iconSize: 30,
                       icon: const Icon(Icons.menu),
@@ -125,21 +169,17 @@ class _MyHomePageState extends State<MyHomePage> {
                         showSideModal(context);
                       },
                     ),
-
-                    // Logo dinámico según tema
                     BlocBuilder<ThemeCubit, bool>(
                       builder: (context, isDark) {
                         return Image.asset(
                           isDark
-                              ? 'assets/infecto_logo_blanco.png' // 👈 Logo para modo oscuro
-                              : 'assets/infecto_logo_sin_fondo.png', // 👈 Logo para modo claro
+                              ? 'assets/infecto_logo_blanco.png'
+                              : 'assets/infecto_logo_sin_fondo.png',
                           width: 120,
                           height: 40,
                         );
                       },
                     ),
-
-                    // Botón animado de cambio de tema
                     BlocBuilder<ThemeCubit, bool>(
                       builder: (context, isDark) {
                         return IconButton(
@@ -156,10 +196,8 @@ class _MyHomePageState extends State<MyHomePage> {
                               );
                             },
                             child: isDark
-                                ? const Icon(Icons.wb_sunny,
-                                key: ValueKey('sun'), color: Colors.amber)
-                                : const Icon(Icons.dark_mode,
-                                key: ValueKey('moon'), color: Colors.black87),
+                                ? const Icon(Icons.wb_sunny, key: ValueKey('sun'), color: Colors.amber)
+                                : const Icon(Icons.dark_mode, key: ValueKey('moon'), color: Colors.black87),
                           ),
                           tooltip: isDark ? 'Tema claro' : 'Tema oscuro',
                         );
@@ -226,6 +264,10 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 }
+
+// … (tu _MenuPanel, _MenuHeader, etc. permanecen iguales)
+
+
 
 class _MenuPanel extends StatelessWidget {
   const _MenuPanel({

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:infecto_migrado/src/components/table_vacunacion.dart';
+import 'package:infecto_migrado/src/components/terminos.y.condiciones.dart';
 import 'CalculadoraView.dart';
 import 'InicioView.dart';
 import 'ContactoView.dart';
@@ -105,7 +106,7 @@ class _BottomTabNavegatorState extends State<BottomTabNavegator> {
                         BaseAlignment(child: ContactCard()),
                         // Center(child: ContactoView()),
                         BaseAlignment(child: FindUsPage()),
-                        const Center(child: Text("Términos y condiciones")),
+                        BaseAlignment(child: TermsAndConditionsView()),
                         BaseAlignment(child: AboutSection()),
                         const Center(child: Text("<Farmacos>")),
                       ],

@@ -693,34 +693,15 @@ String _normalize(String s) => s
 Widget _card({
   required IconData icon,
   required String label,
-  required Color color,
+  required Color color, // se mantiene por compatibilidad, no se usa para el fondo
   VoidCallback? onTap,
 }) {
-  final content = Padding(
-    padding: const EdgeInsets.all(20),
-    child: Row(
-      children: [
-        Icon(icon, color: Colors.white),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Text(
-            label,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
-            ),
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-        const Icon(Icons.chevron_right, color: Colors.white),
-      ],
-    ),
-  );
+  // Degradado azul
+  const gradStart = Color(0xFF276FAB);
+  const gradEnd   = Color(0xFF3BA3F2);
 
-  final shape = RoundedRectangleBorder(borderRadius: BorderRadius.circular(12));
+  final shape = RoundedRectangleBorder(borderRadius: BorderRadius.circular(14));
 
-  // Siempre provee un Material para los Ink effects
   return Material(
     color: Colors.transparent,
     shape: shape,
@@ -728,15 +709,51 @@ Widget _card({
     child: InkWell(
       onTap: onTap,
       customBorder: shape,
-      child: Ink( // Ink + BoxDecoration = splash correcto
-        decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(12)),
-        child: content,
+      splashColor: Colors.white24,
+      highlightColor: Colors.white10,
+      child: Ink(
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [gradStart, gradEnd],
+          ),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Colors.white.withOpacity(0.12), width: 1),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x33000000),
+              blurRadius: 1,
+              offset: Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Row(
+            children: [
+              Icon(icon, color: Colors.white, size: 22),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Icon(Icons.chevron_right, color: Colors.white70),
+            ],
+          ),
+        ),
       ),
     ),
   );
 }
-
-
 
 
 /// Limpia propiedades problemáticas del HTML (opcional)
