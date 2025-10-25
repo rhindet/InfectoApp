@@ -7,7 +7,7 @@ class TermsAndConditionsView extends StatelessWidget {
   const TermsAndConditionsView({
     super.key,
     this.onAccept,
-    this.contactEmail = 'contacto@hu.edu.mx',
+    this.contactEmail = 'laura.nuzzolos@uanl.edu.mx',
     this.lastUpdated = '03/10/2025',
   });
 
@@ -15,9 +15,9 @@ class TermsAndConditionsView extends StatelessWidget {
   final String contactEmail;
   final String lastUpdated;
 
-  static const String appName = 'Terapía antimicrobiana Hu';
+  static const String appName = 'Terapía antimicrobiana HU';
   static const String orgName =
-      'Hospital Universitario "Dr. José Eleuterio González" de la Universidad Autónoma';
+      'Hospital Universitario "Dr. José Eleuterio González"';
 
   @override
   Widget build(BuildContext context) {
@@ -122,7 +122,7 @@ class TermsAndConditionsView extends StatelessWidget {
                               const TextSpan(text: 'Bienvenido(a) a '),
                               TextSpan(text: appName, style: TextStyle(color: primary, fontWeight: FontWeight.w700)),
                               const TextSpan(text: ' (en adelante, la “Aplicación”), desarrollada por '),
-                              TextSpan(text: orgName, style: const TextStyle(fontWeight: FontWeight.w700)),
+                              TextSpan(text: '${orgName} (en adelante, la “Organización”)', style: const TextStyle(fontWeight: FontWeight.w700)),
                               const TextSpan(
                                 text:
                                 '. El uso de esta Aplicación implica la aceptación plena de los presentes Términos y Condiciones. '
@@ -152,26 +152,12 @@ class TermsAndConditionsView extends StatelessWidget {
                     ),
 
                     // 2. Cuentas
-                    _CardBlock(
-                      color: card,
-                      dividerColor: divider,
-                      badge: '2',
-                      title: 'Creación de cuentas de usuario',
-                      titleColor: title,
-                      bodyColor: body,
-                      children: const [
-                        _Bullet('Para acceder a ciertas funcionalidades, los usuarios deberán crear una cuenta personal.'),
-                        _Bullet('El usuario se compromete a proporcionar información veraz y completa al momento de registrarse.'),
-                        _Bullet('El usuario es responsable de mantener la confidencialidad de sus credenciales de acceso.'),
-                        _Bullet('La Organización puede suspender o cancelar cuentas que incumplan estos Términos y Condiciones.'),
-                      ],
-                    ),
 
                     // 3. Propiedad intelectual
                     _CardBlock(
                       color: card,
                       dividerColor: divider,
-                      badge: '3',
+                      badge: '2',
                       title: 'Propiedad intelectual',
                       titleColor: title,
                       bodyColor: body,
@@ -195,7 +181,7 @@ class TermsAndConditionsView extends StatelessWidget {
                     _CardBlock(
                       color: card,
                       dividerColor: divider,
-                      badge: '4',
+                      badge: '3',
                       title: 'Uso permitido',
                       titleColor: title,
                       bodyColor: body,
@@ -213,7 +199,7 @@ class TermsAndConditionsView extends StatelessWidget {
                     _CardBlock(
                       color: card,
                       dividerColor: divider,
-                      badge: '5',
+                      badge: '4',
                       title: 'Limitación de responsabilidad',
                       titleColor: title,
                       bodyColor: body,
@@ -228,7 +214,7 @@ class TermsAndConditionsView extends StatelessWidget {
                     _CardBlock(
                       color: card,
                       dividerColor: divider,
-                      badge: '6',
+                      badge: '5',
                       title: 'Exclusión por contenido de terceros',
                       titleColor: title,
                       bodyColor: body,
@@ -245,7 +231,7 @@ class TermsAndConditionsView extends StatelessWidget {
                     _CardBlock(
                       color: card,
                       dividerColor: divider,
-                      badge: '7',
+                      badge: '6',
                       title: 'Modificaciones',
                       titleColor: title,
                       bodyColor: body,
@@ -261,7 +247,7 @@ class TermsAndConditionsView extends StatelessWidget {
                     _CardBlock(
                       color: card,
                       dividerColor: divider,
-                      badge: '8',
+                      badge: '7',
                       title: 'Ley aplicable y jurisdicción',
                       titleColor: title,
                       bodyColor: body,
@@ -278,7 +264,7 @@ class TermsAndConditionsView extends StatelessWidget {
                     _CardBlock(
                       color: card,
                       dividerColor: divider,
-                      badge: '9',
+                      badge: '8',
                       title: 'Contacto',
                       titleColor: title,
                       bodyColor: body,

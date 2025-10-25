@@ -48,8 +48,7 @@ class MyApp extends StatelessWidget {
         builder: (context, isDark) {
           return MaterialApp(
             debugShowCheckedModeBanner: false,
-            // 👇 cambia el título de la app aquí
-            title: 'Terapía antimicrobiana Hu',
+            title: 'Terapía antimicrobiana HU',
             themeMode: isDark ? ThemeMode.dark : ThemeMode.light,
             theme: ThemeData(
               brightness: Brightness.light,
@@ -89,7 +88,7 @@ class MyApp extends StatelessWidget {
                 Breakpoint(start: 1024, end: double.infinity, name: 'XL'),
               ],
             ),
-            // 👇 Puerta de acceso: muestra T&C si no se han aceptado
+            //Puerta de acceso: muestra T&C si no se han aceptado
             home: const _LaunchGate(),
           );
         },
@@ -123,7 +122,7 @@ class _LaunchGate extends StatelessWidget {
           onWillPop: () async => false,
           child: TermsAndConditionsView(
             //  personaliza si hace falta:
-            contactEmail: 'legal@hu.uanl.mx',
+            contactEmail: 'laura.nuzzolos@uanl.edu.mx',
             lastUpdated: '03/10/2025',
             onAccept: () async {
               await TermsService.accept();
@@ -362,7 +361,7 @@ class _MenuPanel extends StatelessWidget {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          'Infecto App · v1.0.0',
+                          'v1.0.0',
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: Colors.white70,
                             fontWeight: FontWeight.w600,

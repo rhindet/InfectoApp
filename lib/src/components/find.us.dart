@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class FindUsPage extends StatelessWidget {
   const FindUsPage({super.key});
@@ -130,6 +131,12 @@ class _InfoPanel extends StatelessWidget {
 
     final bodyColor = isDark ? Colors.white70 : Colors.blue.shade900;
 
+    Future<void> _abrirUrl(String url) async {
+      final uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
+    }
     return Container(
       decoration: ShapeDecoration(
         color: lightPanel,
@@ -167,6 +174,56 @@ class _InfoPanel extends StatelessWidget {
           ),
 
           const SizedBox(height: 18),
+        InkWell(
+          onTap: () => _abrirUrl(
+            "https://www.google.com/maps/place/Servicio+de+Infectolog%C3%ADa+del+Hospital+Universitario+(UANL)/@25.690449,-100.349064,16z/data=!4m6!3m5!1s0x86629562a7bad809:0x82cddaccea741859!8m2!3d25.690449!4d-100.3490644!16s%2Fg%2F11pz3559ps?hl=en&entry=ttu",
+          ),
+          borderRadius: BorderRadius.circular(12),
+          splashColor: Colors.red.withOpacity(0.2),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade300),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.15),
+                  blurRadius: 6,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.location_on,
+                  color: Colors.red,
+                  size: 22,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  "Ver en Google Maps",
+                  style: TextStyle(
+                    color: Colors.black87,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 15,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                const Icon(
+                  Icons.open_in_new,
+                  color: Colors.grey,
+                  size: 18,
+                ),
+              ],
+            ),
+          ),
+        ),
+          const SizedBox(height: 18),
+
           Divider(height: 1, color: isDark ? Colors.white12 : Colors.black12),
           const SizedBox(height: 18),
 

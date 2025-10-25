@@ -12,7 +12,7 @@ class CambiarPagina extends ChangePageEvent {
 // ChangePageBloc.dart
 class ChangePageBloc extends Bloc<ChangePageEvent, int> {
 
-  ChangePageBloc() : super(0) {
+  ChangePageBloc() : super(1) {
     on<CambiarPagina>((event, emit) {
       emit(event.index);
     });

@@ -34,7 +34,7 @@ class _BottomTabNavegatorState extends State<BottomTabNavegator> {
   @override
   void initState() {
     super.initState();
-    pageController = PageController();
+    pageController = PageController(initialPage: 1);
   }
 
   @override

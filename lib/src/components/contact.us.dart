@@ -140,9 +140,6 @@ class ContactCard extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 2, 16, 16),
               child: _SocialBar(
-                onFacebook: () => _open('https://facebook.com'),
-                onInstagram: () => _open('https://instagram.com'),
-                onWhatsapp: () => _open('https://wa.me/5218110012345'),
                 onX: () => _open('https://twitter.com'),
               ),
             ),
@@ -278,15 +275,9 @@ class _QuickAction extends StatelessWidget {
 
 class _SocialBar extends StatelessWidget {
   const _SocialBar({
-    required this.onFacebook,
-    required this.onInstagram,
-    required this.onWhatsapp,
     required this.onX,
   });
 
-  final VoidCallback onFacebook;
-  final VoidCallback onInstagram;
-  final VoidCallback onWhatsapp;
   final VoidCallback onX;
 
   @override
@@ -295,9 +286,6 @@ class _SocialBar extends StatelessWidget {
       spacing: 12,
       runSpacing: 8,
       children: [
-        _SocialChip(icon: FontAwesomeIcons.facebookF, label: 'Facebook', onTap: onFacebook),
-        _SocialChip(icon: FontAwesomeIcons.instagram, label: 'Instagram', onTap: onInstagram),
-        _SocialChip(icon: FontAwesomeIcons.whatsapp, label: 'WhatsApp', onTap: onWhatsapp),
         _SocialChip(icon: FontAwesomeIcons.xTwitter, label: 'X / Twitter', onTap: onX),
       ],
     );

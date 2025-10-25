@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class CalculadoraView extends StatefulWidget {
   @override
@@ -124,6 +125,12 @@ class _CalculadoraViewState extends State<CalculadoraView> {
     final List<BoxShadow> cardShadows = isDark
         ? [const BoxShadow(color: Colors.black45, blurRadius: 8, offset: Offset(0, 4))]
         : [const BoxShadow(color: Color(0x1A000000), blurRadius: 10, offset: Offset(0, 4))]; // antes: const []
+    Future<void> _abrirUrl(String url) async {
+      final uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
+    }
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -216,6 +223,25 @@ class _CalculadoraViewState extends State<CalculadoraView> {
                         ),
                         const SizedBox(height: 24),
                         _GradientButton(onPressed: _calculate),
+                        const SizedBox(height: 24),
+                        InkWell(
+                          onTap: () => _abrirUrl(
+                            "https://pubmed.ncbi.nlm.nih.gov/19414839"
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  style: TextStyle(
+                                    fontSize: 8,
+
+                                  ),
+                                  "* Referencia: Levey AS et al. A new equation to estimate glomerular filtration rate. Ann Intern Med. 2009 May 5;150(9):604-12. doi: 10.7326/0003-4819-150-9-200905050-00006.",
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
                       ],
                     ),
                   ),
