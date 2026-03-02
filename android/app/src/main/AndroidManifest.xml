@@ -2,7 +2,21 @@
     <!-- (Opcional) Estos permisos ya no se recomiendan desde Android 10+ salvo casos específicos -->
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-
+    <queries>
+        <!-- Google Maps -->
+        <package android:name="com.google.android.apps.maps" />
+        <!-- Waze (opcional) -->
+        <package android:name="com.waze" />
+        <!-- Intents geo/navigation -->
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="geo" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="google.navigation" />
+        </intent>
+    </queries>
     <application
         android:label="Terapia Antimicrobiana HU"
         android:name="${applicationName}"

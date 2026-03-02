@@ -178,9 +178,17 @@ class _InicioViewState extends State<InicioView> {
                 imageAsset: "assets/escudo-con-simbolo-de-hospital.png",
                 onTap: _openGuia(
                   id: "68a007a0032b33094787d4a2",
-                  title: "Prevención y control de infecciones",
+                  title: "Prevención y conclear"
+                      "trol de infecciones",
                 ),
               ),
+          _QuickLinkTileAlt(
+            label: "Resistencia Antimicrobiana Local",
+            imageAsset: "assets/resistance.png",
+            onTap: _openGuia(
+              id: "6977b1f4789b38ab31bbb8ff",
+              title: "Resistencia Antimicrobiana Local",
+            ))
             ],
           ),
         ),
