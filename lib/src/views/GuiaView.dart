@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:flutter_html_table/flutter_html_table.dart';
-
+import 'dart:convert';
+import 'dart:typed_data';
 import '../components/article_search_cubit.dart';
+import '../components/image_viewer_dialog.dart';
 import '../core/Repositories/AppDeps.dart';
 import '../core/models/ArticleModel.dart';
 import '../utils/highlight.dart';
-
 /// --------- Estado de navegación (0..5 niveles) ----------
 class GuiaState {
   final bool isArticleMode;
@@ -1002,7 +1003,13 @@ List<Widget> _buildHtmlSegments(String html, BuildContext context, String highli
       backgroundColor: tableBg,
       padding: HtmlPaddings.all(6),
       border: Border.all(color: borderColor, width: 1),
-      whiteSpace: WhiteSpace.normal, // ✅ NO forzar cortes raros
+      whiteSpace: WhiteSpace.normal,
+    ),
+
+    // ✅ Ajusta default img (mini en artículo)
+    "img": Style(
+      margin: Margins.symmetric(vertical: 8),
+      display: Display.block,
     ),
   };
 
@@ -1013,25 +1020,186 @@ List<Widget> _buildHtmlSegments(String html, BuildContext context, String highli
     return markEmptyParagraphs(cleaned);
   }
 
-  for (final m in _tableRx.allMatches(html)) {
-    if (m.start > last) {
-      final beforeRaw = html.substring(last, m.start); // ✅ sin trim
-      final processed = process(beforeRaw);
+  bool _isDataImage(String src) {
+    final s = src.trim().toLowerCase();
+    return s.startsWith('data:image/');
+  }
 
-      if (processed.trim().isNotEmpty) {
-        widgets.add(
-          Padding(
-            padding: const EdgeInsets.only(bottom: 6),
-            child: SelectionContainer.disabled(
-              child: Html(
-                data: processed,
-                extensions: const [TableHtmlExtension()],
-                style: baseStyles(),
+
+  Uint8List? _decodeDataImage(String src) {
+    // data:image/png;base64,AAAA...
+    final s = src.trim();
+    final comma = s.indexOf(',');
+    if (comma < 0) return null;
+
+    final meta = s.substring(0, comma).toLowerCase();
+    if (!meta.contains('base64')) return null;
+
+    final b64 = s.substring(comma + 1).trim();
+    if (b64.isEmpty) return null;
+
+    try {
+      return base64Decode(b64);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  // ✅ EXTENSION: intercepta <img> y lo hace clickable -> modal full screen
+  List<HtmlExtension> htmlExtensions(BuildContext ctx) => [
+    const TableHtmlExtension(),
+
+    TagExtension(
+      tagsToExtend: {"img"},
+      builder: (ExtensionContext ext) {
+        final attrs = ext.attributes;
+        final src = (attrs["src"] ?? "").trim();
+        final alt = (attrs["alt"] ?? "").trim();
+
+        if (src.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        final st = _readImgStyle(attrs);
+
+
+        // hero tag único (por src) para animación opcional
+        final heroTag = "img-${src.hashCode}";
+
+        final Widget imageWidget;
+
+        if (_isDataImage(src)) {
+          final bytes = _decodeDataImage(src);
+
+          if (bytes == null) {
+            imageWidget = Container(
+              height: 160,
+              alignment: Alignment.center,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.broken_image, color: isDark ? Colors.white70 : Colors.black38, size: 34),
+                  const SizedBox(height: 6),
+                  Text(
+                    alt.isNotEmpty ? alt : "Imagen inválida (base64)",
+                    style: TextStyle(color: isDark ? Colors.white70 : Colors.black54, fontSize: 12),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            );
+          } else {
+            imageWidget = Image.memory(
+              bytes,
+              width: st.widthPx,
+              height: st.heightPx,
+              fit: st.fit,
+              gaplessPlayback: true,
+              errorBuilder: (_, __, ___) => Container(
+                height: 160,
+                alignment: Alignment.center,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.broken_image, color: isDark ? Colors.white70 : Colors.black38, size: 34),
+                    const SizedBox(height: 6),
+                    Text(
+                      alt.isNotEmpty ? alt : "No se pudo cargar la imagen",
+                      style: TextStyle(color: isDark ? Colors.white70 : Colors.black54, fontSize: 12),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
+        } else {
+          imageWidget = Image.network(
+            src,
+            width: st.widthPx,
+            height: st.heightPx,
+            fit: st.fit,
+            loadingBuilder: (context, child, progress) {
+              if (progress == null) return child;
+              return Container(
+                height: 160,
+                alignment: Alignment.center,
+                child: const SizedBox(width: 28, height: 28, child: CircularProgressIndicator()),
+              );
+            },
+            errorBuilder: (_, __, ___) => Container(
+              height: 160,
+              alignment: Alignment.center,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.broken_image, color: isDark ? Colors.white70 : Colors.black38, size: 34),
+                  const SizedBox(height: 6),
+                  Text(
+                    alt.isNotEmpty ? alt : "No se pudo cargar la imagen",
+                    style: TextStyle(color: isDark ? Colors.white70 : Colors.black54, fontSize: 12),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
               ),
             ),
+          );
+        }
+
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: LayoutBuilder(
+            builder: (ctx2, constraints) {
+              final maxW = constraints.maxWidth;
+
+              // si viene width:25% -> se convierte a px
+              final targetW = (st.widthPct != null)
+                  ? (maxW * (st.widthPct! / 100.0))
+                  : st.widthPx;
+
+              final boxed = SizedBox(
+                width: targetW,
+                height: st.heightPx, // si es auto -> null
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(0),
+                  child: imageWidget,
+                ),
+              );
+
+              return GestureDetector(
+                onTap: () => FullscreenImageViewer.open(ctx, src: src, heroTag: heroTag, alt: alt),
+                child: Hero(tag: heroTag, child: boxed),
+              );
+            },
           ),
         );
-      }
+      },
+    ),
+  ];
+
+  void addHtmlWidget(String raw, {EdgeInsets pad = const EdgeInsets.only(bottom: 6)}) {
+    final processed = process(raw);
+    if (processed.trim().isEmpty) return;
+
+    widgets.add(
+      Padding(
+        padding: pad,
+        child: SelectionContainer.disabled(
+          child: Html(
+            data: processed,
+            extensions: htmlExtensions(context),
+            style: baseStyles(),
+          ),
+        ),
+      ),
+    );
+  }
+
+  for (final m in _tableRx.allMatches(html)) {
+    if (m.start > last) {
+      final beforeRaw = html.substring(last, m.start);
+      addHtmlWidget(beforeRaw);
     }
 
     final tableHtmlRaw = html.substring(m.start, m.end);
@@ -1047,7 +1215,7 @@ List<Widget> _buildHtmlSegments(String html, BuildContext context, String highli
 
               final table = Html(
                 data: tableProcessed,
-                extensions: const [TableHtmlExtension()],
+                extensions: htmlExtensions(context),
                 style: baseStyles(),
               );
 
@@ -1071,41 +1239,95 @@ List<Widget> _buildHtmlSegments(String html, BuildContext context, String highli
   }
 
   if (last < html.length) {
-    final afterRaw = html.substring(last); // ✅ sin trim
-    final processed = process(afterRaw);
-
-    if (processed.trim().isNotEmpty) {
-      widgets.add(
-        Padding(
-          padding: const EdgeInsets.only(bottom: 6),
-          child: SelectionContainer.disabled(
-            child: Html(
-              data: processed,
-              extensions: const [TableHtmlExtension()],
-              style: baseStyles(),
-            ),
-          ),
-        ),
-      );
-    }
+    final afterRaw = html.substring(last);
+    addHtmlWidget(afterRaw);
   }
 
-  // Si no hubo tablas y todo estaba vacío
   if (widgets.isEmpty) {
-    final processed = process(html);
-    widgets.add(
-      Padding(
-        padding: const EdgeInsets.only(bottom: 6),
-        child: SelectionContainer.disabled(
-          child: Html(
-            data: processed,
-            extensions: const [TableHtmlExtension()],
-            style: baseStyles(),
-          ),
-        ),
-      ),
-    );
+    addHtmlWidget(html);
   }
 
   return widgets;
+}
+
+double? _parseCssPx(String v) {
+  // "120px" | "120" | "120.5px"
+  final n = double.tryParse(v.replaceAll('px', '').trim());
+  return n;
+}
+
+double? _parseCssPercent(String v) {
+  // "25%"
+  final t = v.trim();
+  if (!t.endsWith('%')) return null;
+  return double.tryParse(t.substring(0, t.length - 1).trim());
+}
+
+Map<String, String> _parseInlineStyle(String? style) {
+  if (style == null || style.trim().isEmpty) return {};
+  final out = <String, String>{};
+  for (final part in style.split(';')) {
+    final p = part.trim();
+    if (p.isEmpty) continue;
+    final idx = p.indexOf(':');
+    if (idx < 0) continue;
+    final k = p.substring(0, idx).trim().toLowerCase();
+    final v = p.substring(idx + 1).trim();
+    out[k] = v;
+  }
+  return out;
+}
+
+class _ImgStyle {
+  final double? widthPx;
+  final double? widthPct; // 0..100
+  final double? heightPx;
+  final BoxFit fit;
+
+  const _ImgStyle({
+    this.widthPx,
+    this.widthPct,
+    this.heightPx,
+    this.fit = BoxFit.contain,
+  });
+}
+
+_ImgStyle _readImgStyle(Map<String, String> attrs) {
+  // 1) atributos HTML (width/height)
+  double? wPx;
+  double? hPx;
+
+  final aw = attrs["width"];
+  final ah = attrs["height"];
+  if (aw != null) wPx = double.tryParse(aw.replaceAll(RegExp(r"[^\d.]"), ""));
+  if (ah != null) hPx = double.tryParse(ah.replaceAll(RegExp(r"[^\d.]"), ""));
+
+  // 2) inline style="..."
+  final st = _parseInlineStyle(attrs["style"]);
+  double? wPct;
+
+  final w = st["width"];
+  if (w != null) {
+    wPct = _parseCssPercent(w);
+    wPx ??= _parseCssPx(w);
+  }
+
+  final h = st["height"];
+  if (h != null) {
+    // height:auto -> null (dejamos que Flutter lo calcule)
+    if (h.toLowerCase() != "auto") {
+      hPx ??= _parseCssPx(h);
+    }
+  }
+
+  // object-fit
+  BoxFit fit = BoxFit.contain;
+  final of = (st["object-fit"] ?? "").toLowerCase().trim();
+  if (of == "cover") fit = BoxFit.cover;
+  if (of == "fill") fit = BoxFit.fill;
+  if (of == "contain") fit = BoxFit.contain;
+  if (of == "none") fit = BoxFit.none;
+  if (of == "scale-down") fit = BoxFit.scaleDown;
+
+  return _ImgStyle(widthPx: wPx, widthPct: wPct, heightPx: hPx, fit: fit);
 }
