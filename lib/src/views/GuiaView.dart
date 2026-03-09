@@ -9,6 +9,7 @@ import '../components/image_viewer_dialog.dart';
 import '../core/Repositories/AppDeps.dart';
 import '../core/models/ArticleModel.dart';
 import '../utils/highlight.dart';
+import 'package:url_launcher/url_launcher.dart';
 /// --------- Estado de navegación (0..5 niveles) ----------
 class GuiaState {
   final bool isArticleMode;
@@ -367,6 +368,7 @@ class _GuiaViewState extends State<GuiaView> {
     if (raw == null || raw.trim().isEmpty) return fallback;
     return _iconos[_normalize(raw)] ?? fallback;
   }
+
 
   Future<List<GuiaRow>> _loadRows(GuiaState s) async {
     if (s.level == 0) {
@@ -819,6 +821,39 @@ String _normalize(String s) => s
     .replaceAll(RegExp(r'[úùüû]'), 'u')
     .replaceAll('ñ', 'n');
 
+Future<void> _openUrl(BuildContext context, String? url) async {
+  if (url == null || url.trim().isEmpty) return;
+
+  final raw = url.trim();
+  Uri? uri = Uri.tryParse(raw);
+
+  if (uri == null || (!uri.hasScheme && !raw.startsWith('mailto:') && !raw.startsWith('tel:'))) {
+    uri = Uri.tryParse('https://$raw');
+  }
+
+  if (uri == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('URL inválida')),
+    );
+    return;
+  }
+
+  try {
+    final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!ok && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No se pudo abrir el enlace')),
+      );
+    }
+  } catch (_) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Error al abrir el enlace')),
+      );
+    }
+  }
+}
+
 Widget _card({
   required IconData icon,
   required String label,
@@ -949,14 +984,22 @@ List<Widget> _buildHtmlSegments(String html, BuildContext context, String highli
   final pillText = isDark ? const Color(0xFF93C5FD) : const Color(0xFF1E6BB8);
 
   Map<String, Style> baseStyles() => {
+    "body": Style(
+      fontSize: FontSize(14),
+      lineHeight: const LineHeight(1.35),
+      color: cellText,
+      margin: Margins.zero,
+      padding: HtmlPaddings.zero,
+    ),
     "mark": Style(
       backgroundColor: const Color(0xFFFFFF00),
       padding: HtmlPaddings.symmetric(horizontal: 2, vertical: 1),
     ),
     "a": Style(
-      color: isDark ? const Color(0xFF93C5FD) : const Color(0xFF1E6BB8),
+      color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF0A66C2),
       textDecoration: TextDecoration.underline,
-      fontWeight: FontWeight.w600,
+      textDecorationColor: isDark ? const Color(0xFF60A5FA) : const Color(0xFF0A66C2),
+      fontWeight: FontWeight.w700,
     ),
     "p": Style(
       margin: Margins.only(bottom: 8),
@@ -964,12 +1007,39 @@ List<Widget> _buildHtmlSegments(String html, BuildContext context, String highli
       lineHeight: const LineHeight(1.35),
     ),
     ".p-empty": Style(
-      margin: Margins.only(bottom: 2),
+      margin: Margins.only(bottom: 0),
       padding: HtmlPaddings.zero,
-      lineHeight: const LineHeight(0.65),
+      lineHeight: const LineHeight(0),
     ),
-    "h1": Style(fontSize: FontSize(26), fontWeight: FontWeight.w700, color: cellText),
-    "h2": Style(fontSize: FontSize(18), fontWeight: FontWeight.w700, color: cellText),
+    "h1": Style(
+      fontSize: FontSize(26),
+      fontWeight: FontWeight.w800,
+      color: cellText,
+      margin: Margins.only(bottom: 10),
+    ),
+
+    "ul": Style(
+      margin: Margins.only(bottom: 8),
+      padding: HtmlPaddings.only(left: 20),
+    ),
+
+    "ol": Style(
+      margin: Margins.only(bottom: 8),
+      padding: HtmlPaddings.only(left: 20),
+    ),
+
+    "li": Style(
+      margin: Margins.zero,
+      color: cellText,
+      lineHeight: const LineHeight(1.35),
+    ),
+
+    "h2": Style(
+      fontSize: FontSize(18),
+      fontWeight: FontWeight.w800,
+      color: cellText,
+      margin: Margins.only(top: 14, bottom: 8),
+    ),
     ".muted": Style(color: mutedColor),
     ".pill": Style(
       display: Display.inlineBlock,
@@ -987,7 +1057,7 @@ List<Widget> _buildHtmlSegments(String html, BuildContext context, String highli
     "table": Style(
       width: Width.auto(),
       backgroundColor: tableBg,
-      margin: Margins.only(bottom: 0),
+      margin: Margins.symmetric(vertical: 8),
       border: Border.all(color: borderColor, width: 1),
     ),
     "tr": Style(backgroundColor: tableBg),
@@ -1011,14 +1081,78 @@ List<Widget> _buildHtmlSegments(String html, BuildContext context, String highli
       margin: Margins.symmetric(vertical: 8),
       display: Display.block,
     ),
+
+
   };
 
+  String linkifyPlainUrls(String html) {
+    if (html.isEmpty) return html;
+
+    // Protegemos bloques donde NO queremos reemplazar nada
+    final protectedBlocks = <String>[];
+    String protectedHtml = html;
+
+    final blockRegex = RegExp(
+      r'(<a\b[^>]*>[\s\S]*?<\/a>)|(<img\b[^>]*>)|(<script\b[^>]*>[\s\S]*?<\/script>)|(<style\b[^>]*>[\s\S]*?<\/style>)|(<code\b[^>]*>[\s\S]*?<\/code>)|(<pre\b[^>]*>[\s\S]*?<\/pre>)',
+      caseSensitive: false,
+      dotAll: true,
+    );
+
+    protectedHtml = protectedHtml.replaceAllMapped(blockRegex, (m) {
+      final token = '___HTML_BLOCK_${protectedBlocks.length}___';
+      protectedBlocks.add(m.group(0)!);
+      return token;
+    });
+
+    // Detecta URLs planas:
+    // - https://...
+    // - http://...
+    // - www....
+    final urlRegex = RegExp(
+      r'((?:https?:\/\/|www\.)[^\s<]+)',
+      caseSensitive: false,
+    );
+
+    protectedHtml = protectedHtml.replaceAllMapped(urlRegex, (m) {
+      String url = m.group(0)!;
+
+      // Quitar puntuación final común que no pertenece al link
+      String trailing = '';
+      while (url.isNotEmpty &&
+          RegExp(r'[)\],.;!?]$').hasMatch(url) &&
+          !url.endsWith(')')) {
+        trailing = url[url.length - 1] + trailing;
+        url = url.substring(0, url.length - 1);
+      }
+
+      final href = url.toLowerCase().startsWith('http://') ||
+          url.toLowerCase().startsWith('https://')
+          ? url
+          : 'https://$url';
+
+      return '<a href="$href">$url</a>$trailing';
+    });
+
+    // Restaurar bloques protegidos
+    // Restaurar bloques protegidos
+    for (int i = 0; i < protectedBlocks.length; i++) {
+      protectedHtml =
+          protectedHtml.replaceFirst('___HTML_BLOCK_${i}___', protectedBlocks[i]);
+    }
+
+    return protectedHtml;
+  }
+
+
   String process(String raw) {
+    final sanitized = sanitizeFontFeatures(raw);
+    final linked = linkifyPlainUrls(sanitized);
     final cleaned = (highlightQuery.isEmpty)
-        ? sanitizeFontFeatures(raw)
-        : highlightHtml(sanitizeFontFeatures(raw), highlightQuery);
+        ? linked
+        : highlightHtml(linked, highlightQuery);
     return markEmptyParagraphs(cleaned);
   }
+  
 
   bool _isDataImage(String src) {
     final s = src.trim().toLowerCase();
@@ -1044,6 +1178,9 @@ List<Widget> _buildHtmlSegments(String html, BuildContext context, String highli
       return null;
     }
   }
+
+
+
 
   // ✅ EXTENSION: intercepta <img> y lo hace clickable -> modal full screen
   List<HtmlExtension> htmlExtensions(BuildContext ctx) => [
@@ -1190,6 +1327,9 @@ List<Widget> _buildHtmlSegments(String html, BuildContext context, String highli
             data: processed,
             extensions: htmlExtensions(context),
             style: baseStyles(),
+            onLinkTap: (url, attributes, element) {
+              _openUrl(context, url);
+            },
           ),
         ),
       ),
@@ -1217,6 +1357,9 @@ List<Widget> _buildHtmlSegments(String html, BuildContext context, String highli
                 data: tableProcessed,
                 extensions: htmlExtensions(context),
                 style: baseStyles(),
+                onLinkTap: (url, attributes, element) {
+                  _openUrl(context, url);
+                },
               );
 
               return Scrollbar(
