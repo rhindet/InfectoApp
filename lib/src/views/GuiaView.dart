@@ -1187,6 +1187,60 @@ List<Widget> _buildHtmlSegments(String html, BuildContext context, String highli
     const TableHtmlExtension(),
 
     TagExtension(
+      tagsToExtend: {"x-border"},
+      builder: (ExtensionContext ext) {
+        final attrs = ext.attributes;
+        final styleMap = _parseInlineStyle(attrs["style"]);
+        final borderColorRaw = styleMap["border-color"] ?? "#000000";
+
+        Color parseColor(String raw) {
+          final v = raw.trim().toLowerCase();
+
+          if (v.startsWith("#")) {
+            final hex = v.replaceFirst("#", "");
+            if (hex.length == 6) {
+              return Color(int.parse("FF$hex", radix: 16));
+            }
+            if (hex.length == 8) {
+              return Color(int.parse(hex, radix: 16));
+            }
+          }
+
+          final rgb = RegExp(r'rgb\(\s*(\d+),\s*(\d+),\s*(\d+)\s*\)').firstMatch(v);
+          if (rgb != null) {
+            return Color.fromARGB(
+              255,
+              int.parse(rgb.group(1)!),
+              int.parse(rgb.group(2)!),
+              int.parse(rgb.group(3)!),
+            );
+          }
+
+          return Colors.black;
+        }
+
+        final borderColor = parseColor(borderColorRaw);
+        final text = ext.element?.text ?? "";
+
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+          decoration: BoxDecoration(
+            border: Border.all(color: borderColor, width: 1),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Text(
+            text.isEmpty ? " " : text,
+            style: TextStyle(
+              color: cellText,
+              fontSize: 14,
+              height: 1.2,
+            ),
+          ),
+        );
+      },
+    ),
+
+    TagExtension(
       tagsToExtend: {"img"},
       builder: (ExtensionContext ext) {
         final attrs = ext.attributes;
